@@ -99,7 +99,7 @@ app.get("*", (req, res) => {
 app.use(errorHandlerMiddleware);
 app.use(routeNotFoundMiddleware);
 
-const PORT = process.env.PORT || 5500; //port number
+const PORT = process.env.PORT || 5000; //port number
 
 //start the server and connect to the database
 const start = async () => {
