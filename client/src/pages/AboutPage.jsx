@@ -11,7 +11,7 @@ const AboutPageComponent = () => {
       <div className="">
         <div className="mt-6">
           <p>
-            Property Plus is a real estate management platform that helps you to
+            Rentable is a real estate management platform that helps you to
             find and manage your rentals in one place. You can either register
             as a property owner or a tenant. The property owner can post their
             property and manage their tenants. The tenant can find properties to
@@ -107,9 +107,9 @@ const AboutPage = () => {
           </div>
           <hr className="my-6 border-gray-700 sm:mx-auto  lg:my-8" />
           <span className="block text-sm  sm:text-center ">
-            2023 |{" "}
+            2025 |{" "}
             <Link to="/" className="hover:underline">
-              Property Plus
+              Rentable
             </Link>
           </span>
         </footer>

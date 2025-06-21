@@ -35,7 +35,7 @@ const Footer = () => {
       <span className="block text-sm  sm:text-center ">
         2025 |{" "}
         <Link to={`/${userType}`} className="hover:underline">
-          Property Plus
+          Property Rental
         </Link>
       </span>
     </footer>

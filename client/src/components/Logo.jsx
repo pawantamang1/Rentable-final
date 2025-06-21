@@ -8,7 +8,7 @@ const Logo = () => {
   return (
     <Link to={`/${userType ? userType : ""}`}>
       <img
-        className="w-16 h-10 md:w-20 md:h-12"
+        className="w-16 h-20 md:w-20 md:h-12"
         src={logoImg}
         alt="Property Plus Logo"
       />
