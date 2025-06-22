@@ -99,7 +99,7 @@ app.get("*", (req, res) => {
 app.use(errorHandlerMiddleware);
 app.use(routeNotFoundMiddleware);
 
-const PORT = process.env.PORT || 5000; //port number
+const PORT = process.env.PORT || 5500; //port number
 
 //start the server and connect to the database
 const start = async () => {
@@ -122,7 +122,7 @@ app.use((req, res, next) => {
 });
 
 // Make sure your auth routes are properly mounted
-console.log('Auth routes mounted at /api/auth');
+console.log("Auth routes mounted at /api/auth");
 
 // Socket setup
 const io = new Server(server, {

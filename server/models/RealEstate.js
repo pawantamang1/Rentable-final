@@ -6,7 +6,7 @@ const RealEstateSchema = new mongoose.Schema(
   {
     propertyId: {
       type: String,
-      required: [true, "Please provide a property ID"],
+      // required: [true, "Please provide a property ID"],
       unique: true,
     },
     title: {
@@ -88,8 +88,57 @@ const RealEstateSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please provide a category for the property"],
       enum: {
-        values: ["House", "Apartment", "Room", "Shop Space", "Office Space"],
+        values: ["House", "Apartment", "Room", "Villa", "Studio"],
         message: "{VALUE} is not in the category list",
+      },
+    },
+
+    amenities: {
+      bedrooms: {
+        type: Number,
+        min: [0, "Bedrooms cannot be negative"],
+        max: [100, "Bedrooms cannot be more than 100"],
+        default: 1,
+      },
+      bathrooms: {
+        type: Number,
+        min: [0, "Bathrooms cannot be negative"],
+        max: [50, "Bathrooms cannot be more than 50"],
+        default: 1,
+      },
+      kitchens: {
+        type: Number,
+        min: [0, "Kitchens cannot be negative"],
+        max: [20, "Kitchens cannot be more than 20"],
+        default: 1,
+      },
+      furnished: {
+        type: Boolean,
+        default: false,
+      },
+      parking: {
+        type: Boolean,
+        default: false,
+      },
+      petFriendly: {
+        type: Boolean,
+        default: false,
+      },
+      wifi: {
+        type: Boolean,
+        default: false,
+      },
+      waterSupply: {
+        type: Boolean,
+        default: true,
+      },
+      balcony: {
+        type: Boolean,
+        default: false,
+      },
+      airConditioning: {
+        type: Boolean,
+        default: false,
       },
     },
 
