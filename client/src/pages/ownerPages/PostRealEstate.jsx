@@ -1,26 +1,31 @@
-import { useState, useCallback, useEffect } from "react";
-import { FormTextField, FormSelectField, AlertToast, CountrySelectField } from "../../components";
+import { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
-  postRealEstate,
+  AlertToast,
+  CountrySelectField,
+  FormSelectField,
+  FormTextField,
+} from "../../components";
+import {
   clearAlert,
+  postRealEstate,
 } from "../../features/realEstateOwner/realEstateOwnerSlice";
 
 import postRealEstateImg from "../../assets/images/postRealEstateImg.svg";
 import postRealEstateImg2 from "../../assets/images/postRealEstateImg2.svg";
 import postRealEstateImg3 from "../../assets/images/postRealEstateImg3.svg";
 
+import BungalowIcon from "@mui/icons-material/Bungalow";
+import InfoIcon from "@mui/icons-material/Info";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PermMediaIcon from "@mui/icons-material/PermMedia";
 import {
   Button,
   CircularProgress,
-  TextField,
   InputAdornment,
+  TextField,
 } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
-import BungalowIcon from "@mui/icons-material/Bungalow";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PermMediaIcon from "@mui/icons-material/PermMedia";
 import countryToCurrency from "country-to-currency";
 
 const PostRealEstate = () => {
@@ -186,20 +191,16 @@ const PostRealEstate = () => {
                     onChange={handleChange}
                     InputProps={{
                       startAdornment: (
-                        <InputAdornment position="start">{countryToCurrency[values.countryCode]}</InputAdornment>
+                        <InputAdornment position="start">
+                          {countryToCurrency[values.countryCode]}
+                        </InputAdornment>
                       ),
                     }}
                   />
                   <FormSelectField
                     label="Category"
                     name="category"
-                    options={[
-                      "House",
-                      "Apartment",
-                      "Room",
-                      "Shop Space",
-                      "Office Space",
-                    ]}
+                    options={["House", "Apartment", "Room", "Villa", "Studio"]}
                     value={values.category}
                     handleChange={handleChange}
                   />
