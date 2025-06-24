@@ -1,9 +1,9 @@
+import jwt from "jsonwebtoken";
 import OwnerUser from "../models/OwnerUser.js";
 import TenantUser from "../models/TenantUser.js";
 import { BadRequestError, UnAuthorizedError } from "../request-errors/index.js";
-import jwt from "jsonwebtoken";
-import { sendEmail } from "../utils/emailSender.js";
 import { cloudinaryProfileImageUpload } from "../utils/cloudinaryUpload.js";
+import { sendEmail } from "../utils/emailSender.js";
 
 /**
  * @description Login a user
@@ -101,7 +101,6 @@ const login = async (req, res) => {
  * @returns {string} token
  */
 const register = async (req, res) => {
-
   const { role, email } = req.body;
   // console.log(req.body)
   if (role === "owner") {
@@ -130,14 +129,14 @@ const register = async (req, res) => {
     const subject = "Email Verification Link";
     const body = `
     <p> Hello ${owner.firstName} ${owner.lastName},</p>
-    <p>Please click on the link below to verify your account on Property Plus</p>
+    <p>Please click on the link below to verify your account on Rental</p>
     <a href="${process.env.CLIENT_URL}/#/verify-account/owner/${verificationToken}">Verify Account</a>
     <p>Regards,</p>
     <p>Team Property Plus</p>
     `;
     await sendEmail(to, from, subject, body);
 
-    const profileImage = await cloudinaryProfileImageUpload(req)
+    const profileImage = await cloudinaryProfileImageUpload(req);
     owner.profileImage = profileImage;
     await owner.save();
 
@@ -176,7 +175,7 @@ const register = async (req, res) => {
     `;
     await sendEmail(to, from, subject, body);
 
-    const profileImage = await cloudinaryProfileImageUpload(req)
+    const profileImage = await cloudinaryProfileImageUpload(req);
     tenant.profileImage = profileImage;
     await tenant.save();
 
@@ -588,13 +587,13 @@ const logout = (req, res) => {
 };
 
 export {
+  forgotPassword,
   login,
-  register,
-  verifyAccount,
+  logout,
   refreshOwner,
   refreshTenant,
-  forgotPassword,
-  resetPassword,
-  logout,
+  register,
   resendVerificationEmail,
+  resetPassword,
+  verifyAccount,
 };
