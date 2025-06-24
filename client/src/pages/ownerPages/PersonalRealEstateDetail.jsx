@@ -1,30 +1,44 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  getRealEstateDetail,
-  deleteProperty,
-  clearAlert,
-} from "../../features/realEstateOwner/realEstateOwnerSlice";
-import {
-  PageLoading,
-  Footer,
-  ImageCarousal,
-  ConfirmModal,
-  AlertToast,
-} from "../../components";
-import { dateFormatter, createNumberFormatter } from "../../utils/valueFormatter";
-import { Button, CircularProgress } from "@mui/material";
-import SquareFootRoundedIcon from "@mui/icons-material/SquareFootRounded";
+import AcUnitIcon from "@mui/icons-material/AcUnit";
+import BalconyIcon from "@mui/icons-material/Balcony";
+import BathtubIcon from "@mui/icons-material/Bathtub";
+import BedIcon from "@mui/icons-material/Bed";
+import ChairIcon from "@mui/icons-material/Chair";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
 import HorizontalSplitRoundedIcon from "@mui/icons-material/HorizontalSplitRounded";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import GavelIcon from "@mui/icons-material/Gavel";
-import BorderColorIcon from "@mui/icons-material/BorderColor";
+import KitchenIcon from "@mui/icons-material/Kitchen";
+import PetsIcon from "@mui/icons-material/Pets";
+import SquareFootRoundedIcon from "@mui/icons-material/SquareFootRounded";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import WifiIcon from "@mui/icons-material/Wifi";
 import ArticleIcon from "@mui/icons-material/Article";
+import BorderColorIcon from "@mui/icons-material/BorderColor";
 import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
+import GavelIcon from "@mui/icons-material/Gavel";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import { Button, CircularProgress } from "@mui/material";
 import countryToCurrency from "country-to-currency";
+import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  AlertToast,
+  ConfirmModal,
+  Footer,
+  ImageCarousal,
+  PageLoading,
+} from "../../components";
+import {
+  clearAlert,
+  deleteProperty,
+  getRealEstateDetail,
+} from "../../features/realEstateOwner/realEstateOwnerSlice";
 import { countries } from "../../utils/countryList";
+import {
+  createNumberFormatter,
+  dateFormatter,
+} from "../../utils/valueFormatter";
 
 const PersonalRealEstateDetail = () => {
   const { slug } = useParams();
@@ -86,6 +100,88 @@ const PersonalRealEstateDetail = () => {
   if (!realEstate)
     return <h1 className="mt-6 text-center">No real estate found</h1>;
 
+  const getPositiveAmenities = (amenities) => {
+    if (!amenities) return [];
+
+    const amenityLabels = {
+      bedrooms: "Bedrooms",
+      bathrooms: "Bathrooms",
+      kitchens: "Kitchens",
+      furnished: "Furnished",
+      parking: "Parking Available",
+      petFriendly: "Pet Friendly",
+      wifi: "WiFi Available",
+      waterSupply: "Water Supply",
+      balcony: "Balcony",
+      airConditioning: "Air Conditioning",
+    };
+
+    const positiveAmenities = [];
+
+    // Handle numeric amenities (bedrooms, bathrooms, kitchens)
+    ["bedrooms", "bathrooms", "kitchens"].forEach((key) => {
+      if (amenities[key] && amenities[key] > 0) {
+        positiveAmenities.push({
+          key,
+          label: amenityLabels[key],
+          value: amenities[key],
+          type: "numeric",
+        });
+      }
+    });
+
+    // Handle boolean amenities
+    [
+      "furnished",
+      "parking",
+      "petFriendly",
+      "wifi",
+      "waterSupply",
+      "balcony",
+      "airConditioning",
+    ].forEach((key) => {
+      if (amenities[key] === true) {
+        positiveAmenities.push({
+          key,
+          label: amenityLabels[key],
+          value: true,
+          type: "boolean",
+        });
+      }
+    });
+
+    return positiveAmenities;
+  };
+
+  const getAmenityIcon = (key) => {
+    const iconProps = { sx: { color: "#29b46e" } };
+
+    switch (key) {
+      case "bedrooms":
+        return <BedIcon {...iconProps} />;
+      case "bathrooms":
+        return <BathtubIcon {...iconProps} />;
+      case "kitchens":
+        return <KitchenIcon {...iconProps} />;
+      case "furnished":
+        return <ChairIcon {...iconProps} />;
+      case "parking":
+        return <DirectionsCarIcon {...iconProps} />;
+      case "petFriendly":
+        return <PetsIcon {...iconProps} />;
+      case "wifi":
+        return <WifiIcon {...iconProps} />;
+      case "waterSupply":
+        return <WaterDropIcon {...iconProps} />;
+      case "balcony":
+        return <BalconyIcon {...iconProps} />;
+      case "airConditioning":
+        return <AcUnitIcon {...iconProps} />;
+      default:
+        return <CheckCircleIcon {...iconProps} />;
+    }
+  };
+
   return (
     <>
       <main className="mb-12 mt-10 mx-4 md:mx-12">
@@ -105,10 +201,8 @@ const PersonalRealEstateDetail = () => {
                 </div>
                 <p className="-ml-1 text-base tracking-tight">
                   <LocationOnOutlinedIcon sx={{ color: "#019149" }} />
-                  {realEstate?.address?.streetName}, {" "}
-                  {realEstate?.address?.city},{" "}
-                  {realEstate?.address?.state}, {" "}
-                  {realEstate?.address?.country}
+                  {realEstate?.address?.streetName}, {realEstate?.address?.city}
+                  , {realEstate?.address?.state}, {realEstate?.address?.country}
                 </p>
                 <div className="">
                   <p className="font-robotoNormal text-xs font-semibold tracking-tight">
@@ -125,7 +219,8 @@ const PersonalRealEstateDetail = () => {
                     RENT per month
                   </p>
                   <span className="font-semibold text-lg text-primaryDark">
-                    {countryToCurrency[currentCountry.code]} {format(realEstate?.price)}
+                    {countryToCurrency[currentCountry.code]}{" "}
+                    {format(realEstate?.price)}
                   </span>
                 </div>
               </div>
@@ -213,6 +308,7 @@ const PersonalRealEstateDetail = () => {
             <h3 className="font-semibold p-3">Overview</h3>
             <hr className="w-3/4 ml-3 border-t-2 rounded-md" />
             <div className="flex flex-wrap">
+              {/* Basic Property Info */}
               <div className="flex p-3 mt-2 gap-2 items-center">
                 <span>
                   <SquareFootRoundedIcon sx={{ color: "#738FA7" }} />
@@ -236,6 +332,31 @@ const PersonalRealEstateDetail = () => {
                 <span className="font-semibold"> Property Facing </span>
                 <p className="">{realEstate?.facing}</p>
               </div>
+
+              {/* Amenities Section */}
+              {getPositiveAmenities(realEstate?.amenities).map((amenity) => (
+                <div
+                  key={amenity.key}
+                  className="flex p-3 mt-2 gap-2 items-center"
+                >
+                  <span>{getAmenityIcon(amenity.key)}</span>
+                  <span className="font-semibold">{amenity.label}</span>
+                  {amenity.type === "numeric" ? (
+                    <p className="">{format(amenity.value)}</p>
+                  ) : (
+                    <p className="text-green-600 font-medium">✓ Available</p>
+                  )}
+                </div>
+              ))}
+
+              {/* Show message if no amenities are available */}
+              {getPositiveAmenities(realEstate?.amenities).length === 0 && (
+                <div className="flex p-3 mt-2 gap-2 items-center text-gray-500">
+                  <span className="font-semibold">
+                    No additional amenities specified
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
