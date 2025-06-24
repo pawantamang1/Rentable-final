@@ -1,33 +1,126 @@
-import { useEffect, useCallback, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useParams, Link } from "react-router-dom";
+import AcUnitIcon from "@mui/icons-material/AcUnit";
+import BalconyIcon from "@mui/icons-material/Balcony";
+import BathtubIcon from "@mui/icons-material/Bathtub";
+import BedIcon from "@mui/icons-material/Bed";
+import ChairIcon from "@mui/icons-material/Chair";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ContactsRoundedIcon from "@mui/icons-material/ContactsRounded";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
+import ForwardToInboxRoundedIcon from "@mui/icons-material/ForwardToInboxRounded";
+import HorizontalSplitRoundedIcon from "@mui/icons-material/HorizontalSplitRounded";
+import KitchenIcon from "@mui/icons-material/Kitchen";
+import LocalPhoneRoundedIcon from "@mui/icons-material/LocalPhoneRounded";
+import PetsIcon from "@mui/icons-material/Pets";
+import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import SquareFootRoundedIcon from "@mui/icons-material/SquareFootRounded";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import WifiIcon from "@mui/icons-material/Wifi";
 import {
-  getSingleRealEstate,
-  clearAlert,
-  sendEmailToOwner,
-} from "../../features/realEstateTenant/realEstateTenantSlice";
-import {
-  RealEstateDetailCard,
-  PageLoading,
-  Footer,
-  AlertToast,
-  ConfirmModal,
-} from "../../components";
-import { format } from "../../utils/valueFormatter";
-import {
+  Avatar,
   Button,
   CardActionArea,
-  Avatar,
   CircularProgress,
 } from "@mui/material";
-import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import LocalPhoneRoundedIcon from "@mui/icons-material/LocalPhoneRounded";
-import ForwardToInboxRoundedIcon from "@mui/icons-material/ForwardToInboxRounded";
-import ContactsRoundedIcon from "@mui/icons-material/ContactsRounded";
-import SquareFootRoundedIcon from "@mui/icons-material/SquareFootRounded";
-import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
-import HorizontalSplitRoundedIcon from "@mui/icons-material/HorizontalSplitRounded";
-import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useParams } from "react-router-dom";
+import {
+  AlertToast,
+  ConfirmModal,
+  Footer,
+  PageLoading,
+  RealEstateDetailCard,
+} from "../../components";
+import {
+  clearAlert,
+  getSingleRealEstate,
+  sendEmailToOwner,
+} from "../../features/realEstateTenant/realEstateTenantSlice";
+import { format } from "../../utils/valueFormatter";
+
+const getPositiveAmenities = (amenities) => {
+  if (!amenities) return [];
+
+  const amenityLabels = {
+    bedrooms: "Bedrooms",
+    bathrooms: "Bathrooms",
+    kitchens: "Kitchens",
+    furnished: "Furnished",
+    parking: "Parking Available",
+    petFriendly: "Pet Friendly",
+    wifi: "WiFi Available",
+    waterSupply: "Water Supply",
+    balcony: "Balcony",
+    airConditioning: "Air Conditioning",
+  };
+
+  const positiveAmenities = [];
+
+  // Handle numeric amenities (bedrooms, bathrooms, kitchens)
+  ["bedrooms", "bathrooms", "kitchens"].forEach((key) => {
+    if (amenities[key] && amenities[key] > 0) {
+      positiveAmenities.push({
+        key,
+        label: amenityLabels[key],
+        value: amenities[key],
+        type: "numeric",
+      });
+    }
+  });
+
+  // Handle boolean amenities
+  [
+    "furnished",
+    "parking",
+    "petFriendly",
+    "wifi",
+    "waterSupply",
+    "balcony",
+    "airConditioning",
+  ].forEach((key) => {
+    if (amenities[key] === true) {
+      positiveAmenities.push({
+        key,
+        label: amenityLabels[key],
+        value: true,
+        type: "boolean",
+      });
+    }
+  });
+
+  return positiveAmenities;
+};
+
+const getAmenityIcon = (key) => {
+  const iconProps = { sx: { color: "#29b46e" } };
+
+  switch (key) {
+    case "bedrooms":
+      return <BedIcon {...iconProps} />;
+    case "bathrooms":
+      return <BathtubIcon {...iconProps} />;
+    case "kitchens":
+      return <KitchenIcon {...iconProps} />;
+    case "furnished":
+      return <ChairIcon {...iconProps} />;
+    case "parking":
+      return <DirectionsCarIcon {...iconProps} />;
+    case "petFriendly":
+      return <PetsIcon {...iconProps} />;
+    case "wifi":
+      return <WifiIcon {...iconProps} />;
+    case "waterSupply":
+      return <WaterDropIcon {...iconProps} />;
+    case "balcony":
+      return <BalconyIcon {...iconProps} />;
+    case "airConditioning":
+      return <AcUnitIcon {...iconProps} />;
+    default:
+      return <CheckCircleIcon {...iconProps} />;
+  }
+};
 
 const RealEstateDetail = () => {
   const {
@@ -74,10 +167,18 @@ const RealEstateDetail = () => {
       to: realEstate?.propertyOwner?.email,
       from: user?.email,
       subject: `Rental of Property with ID: ${realEstate?.propertyId}`,
-      body: `<p>Hi ${realEstate?.propertyOwner?.firstName} ${realEstate?.propertyOwner?.lastName},</p>
-      <p>I am interested in renting your property titled <strong>${realEstate?.title}</strong> with ID: ${realEstate?.propertyId}.</p>
+      body: `<p>Hi ${realEstate?.propertyOwner?.firstName} ${
+        realEstate?.propertyOwner?.lastName
+      },</p>
+      <p>I am interested in renting your property titled <strong>${
+        realEstate?.title
+      }</strong> with ID: ${realEstate?.propertyId}.</p>
       <p>Kindly contact me at ${user?.email} or +977 ${user?.phoneNumber}.</p>
-      <p>Visit my profile <a href="${import.meta.env.VITE_APP_BASE_URL}/#/owner/tenant-user/${user?.slug}"><strong>${user?.firstName} ${user?.lastName}</strong></a>.</p>
+      <p>Visit my profile <a href="${
+        import.meta.env.VITE_APP_BASE_URL
+      }/#/owner/tenant-user/${user?.slug}"><strong>${user?.firstName} ${
+        user?.lastName
+      }</strong></a>.</p>
       <br><br>
       <p>Thank you,</p>
       <p>${user?.firstName} ${user?.lastName},</p>
@@ -120,6 +221,7 @@ const RealEstateDetail = () => {
             <h3 className="font-semibold p-3">Overview</h3>
             <hr className="w-3/4 ml-3 border-t-2 rounded-md" />
             <div className="flex flex-wrap">
+              {/* Basic Property Info */}
               <div className="flex p-3 mt-2 gap-2 items-center">
                 <span>
                   <SquareFootRoundedIcon sx={{ color: "#738FA7" }} />
@@ -143,6 +245,31 @@ const RealEstateDetail = () => {
                 <span className="font-semibold"> Property Facing </span>
                 <p className="">{realEstate?.facing}</p>
               </div>
+
+              {/* Amenities Section */}
+              {getPositiveAmenities(realEstate?.amenities).map((amenity) => (
+                <div
+                  key={amenity.key}
+                  className="flex p-3 mt-2 gap-2 items-center"
+                >
+                  <span>{getAmenityIcon(amenity.key)}</span>
+                  <span className="font-semibold">{amenity.label}</span>
+                  {amenity.type === "numeric" ? (
+                    <p className="">{format(amenity.value)}</p>
+                  ) : (
+                    <p className="text-green-600 font-medium">✓ Available</p>
+                  )}
+                </div>
+              ))}
+
+              {/* Show message if no amenities are available */}
+              {getPositiveAmenities(realEstate?.amenities).length === 0 && (
+                <div className="flex p-3 mt-2 gap-2 items-center text-gray-500">
+                  <span className="font-semibold">
+                    No additional amenities specified
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
