@@ -19,6 +19,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import InfoIcon from "@mui/icons-material/Info";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PermMediaIcon from "@mui/icons-material/PermMedia";
+import RoomIcon from "@mui/icons-material/Room";
 import {
   Button,
   Checkbox,
@@ -278,7 +279,8 @@ const PostRealEstate = () => {
                 </div>
                 {/* Room Details */}
                 <div className="mt-4">
-                  <h6 className="mb-3 text-base font-semibold text-gray-800">
+                  <h6 className="mb-3 text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <RoomIcon sx={{ color: "black", fontSize: "1.2rem" }} />
                     Room Details
                   </h6>
                   <div className="flex flex-col gap-4">
