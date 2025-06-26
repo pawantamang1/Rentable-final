@@ -93,25 +93,29 @@ const RealEstateSchema = new mongoose.Schema(
       },
     },
 
-    amenities: {
+    rooms: {
       bedrooms: {
         type: Number,
-        min: [0, "Bedrooms cannot be negative"],
-        max: [100, "Bedrooms cannot be more than 100"],
-        default: 1,
+        required: [true, "Please provide number of bedrooms"],
+        min: [0, "Bedrooms cannot be less than 0"],
+        max: [20, "Bedrooms cannot be more than 20"],
       },
       bathrooms: {
         type: Number,
-        min: [0, "Bathrooms cannot be negative"],
-        max: [50, "Bathrooms cannot be more than 50"],
-        default: 1,
+        required: [true, "Please provide number of bathrooms"],
+        min: [1, "Bathrooms cannot be less than 1"],
+        max: [20, "Bathrooms cannot be more than 20"],
       },
       kitchens: {
         type: Number,
-        min: [0, "Kitchens cannot be negative"],
-        max: [20, "Kitchens cannot be more than 20"],
+        required: [true, "Please provide number of bathrooms"],
         default: 1,
+        min: [1, "Kitchens cannot be less than 1"],
+        max: [3, "Kitchens cannot be more than 3"],
       },
+    },
+
+    amenities: {
       furnished: {
         type: Boolean,
         default: false,

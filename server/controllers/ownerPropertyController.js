@@ -1,13 +1,13 @@
-import RealEstate from "../models/RealEstate.js";
 import { nanoid } from "nanoid";
+import RealEstate from "../models/RealEstate.js";
 import {
-  NotFoundError,
-  ForbiddenRequestError,
   BadRequestError,
+  ForbiddenRequestError,
+  NotFoundError,
 } from "../request-errors/index.js";
 import {
-  cloudinaryMultipleUpload,
   cloudinaryDeleteImage,
+  cloudinaryMultipleUpload,
 } from "../utils/cloudinaryUpload.js";
 
 /**
@@ -23,6 +23,11 @@ const postRealEstate = async (req, res) => {
   req.body.address = { streetName, city, state, country };
   req.body.propertyOwner = req.user.userId;
   req.body.propertyId = nanoid(7);
+  req.body.rooms = {
+    bedrooms: req.body.bedrooms || 0,
+    bathrooms: req.body.bathrooms || 0,
+    kitchens: req.body.kitchens || 1,
+  };
 
   const realEstate = await RealEstate.create(req.body);
 
@@ -187,9 +192,9 @@ const deleteProperty = async (req, res) => {
 };
 
 export {
-  postRealEstate,
+  deleteProperty,
   getOwnerRealEstates,
   getSingleProperty,
+  postRealEstate,
   updatePropertyDetails,
-  deleteProperty,
 };

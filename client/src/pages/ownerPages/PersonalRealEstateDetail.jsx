@@ -1,22 +1,22 @@
 import AcUnitIcon from "@mui/icons-material/AcUnit";
+import ArticleIcon from "@mui/icons-material/Article";
 import BalconyIcon from "@mui/icons-material/Balcony";
-import BathtubIcon from "@mui/icons-material/Bathtub";
-import BedIcon from "@mui/icons-material/Bed";
+import BathtubRoundedIcon from "@mui/icons-material/BathtubRounded";
+import BedRoundedIcon from "@mui/icons-material/BedRounded";
+import BorderColorIcon from "@mui/icons-material/BorderColor";
 import ChairIcon from "@mui/icons-material/Chair";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
+import GavelIcon from "@mui/icons-material/Gavel";
 import HorizontalSplitRoundedIcon from "@mui/icons-material/HorizontalSplitRounded";
-import KitchenIcon from "@mui/icons-material/Kitchen";
+import KitchenRoundedIcon from "@mui/icons-material/KitchenRounded";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import PetsIcon from "@mui/icons-material/Pets";
 import SquareFootRoundedIcon from "@mui/icons-material/SquareFootRounded";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import WifiIcon from "@mui/icons-material/Wifi";
-import ArticleIcon from "@mui/icons-material/Article";
-import BorderColorIcon from "@mui/icons-material/BorderColor";
-import DeleteForeverRoundedIcon from "@mui/icons-material/DeleteForeverRounded";
-import GavelIcon from "@mui/icons-material/Gavel";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import { Button, CircularProgress } from "@mui/material";
 import countryToCurrency from "country-to-currency";
 import { useCallback, useEffect, useState } from "react";
@@ -100,13 +100,48 @@ const PersonalRealEstateDetail = () => {
   if (!realEstate)
     return <h1 className="mt-6 text-center">No real estate found</h1>;
 
+  const getRoomDetails = (rooms) => {
+    if (!rooms) return [];
+
+    const roomDetails = [];
+
+    // Add bedrooms if exists
+    if (rooms.bedrooms !== undefined && rooms.bedrooms !== null) {
+      roomDetails.push({
+        key: "bedrooms",
+        label: `Bedroom${rooms.bedrooms !== 1 ? "s" : ""}`,
+        value: rooms.bedrooms,
+        icon: <BedRoundedIcon sx={{ color: "#4A90E2" }} />,
+      });
+    }
+
+    // Add bathrooms if exists
+    if (rooms.bathrooms !== undefined && rooms.bathrooms !== null) {
+      roomDetails.push({
+        key: "bathrooms",
+        label: `Bathroom${rooms.bathrooms !== 1 ? "s" : ""}`,
+        value: rooms.bathrooms,
+        icon: <BathtubRoundedIcon sx={{ color: "#2196F3" }} />,
+      });
+    }
+
+    // Add kitchens if exists
+    if (rooms.kitchens !== undefined && rooms.kitchens !== null) {
+      roomDetails.push({
+        key: "kitchens",
+        label: `Kitchen${rooms.kitchens !== 1 ? "s" : ""}`,
+        value: rooms.kitchens,
+        icon: <KitchenRoundedIcon sx={{ color: "#FF9800" }} />,
+      });
+    }
+
+    return roomDetails;
+  };
+
   const getPositiveAmenities = (amenities) => {
     if (!amenities) return [];
 
     const amenityLabels = {
-      bedrooms: "Bedrooms",
-      bathrooms: "Bathrooms",
-      kitchens: "Kitchens",
       furnished: "Furnished",
       parking: "Parking Available",
       petFriendly: "Pet Friendly",
@@ -117,18 +152,6 @@ const PersonalRealEstateDetail = () => {
     };
 
     const positiveAmenities = [];
-
-    // Handle numeric amenities (bedrooms, bathrooms, kitchens)
-    ["bedrooms", "bathrooms", "kitchens"].forEach((key) => {
-      if (amenities[key] && amenities[key] > 0) {
-        positiveAmenities.push({
-          key,
-          label: amenityLabels[key],
-          value: amenities[key],
-          type: "numeric",
-        });
-      }
-    });
 
     // Handle boolean amenities
     [
@@ -157,12 +180,6 @@ const PersonalRealEstateDetail = () => {
     const iconProps = { sx: { color: "#29b46e" } };
 
     switch (key) {
-      case "bedrooms":
-        return <BedIcon {...iconProps} />;
-      case "bathrooms":
-        return <BathtubIcon {...iconProps} />;
-      case "kitchens":
-        return <KitchenIcon {...iconProps} />;
       case "furnished":
         return <ChairIcon {...iconProps} />;
       case "parking":
@@ -303,6 +320,46 @@ const PersonalRealEstateDetail = () => {
             <p className="text-lg p-3 tracking-normal">
               {realEstate?.description}
             </p>
+          </div>
+          <div className="flex flex-wrap gap-6 p-3 mb-4">
+            {/* Bedrooms */}
+            <div className="flex gap-2 items-center">
+              <span>
+                <BedRoundedIcon sx={{ color: "#4A90E2" }} />
+              </span>
+              <span className="font-semibold">
+                {realEstate?.rooms?.bedrooms}
+              </span>
+              <span className="text-gray-600">
+                Bedroom{realEstate?.rooms?.bedrooms !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {/* Bathrooms */}
+            <div className="flex gap-2 items-center">
+              <span>
+                <BathtubRoundedIcon sx={{ color: "#2196F3" }} />
+              </span>
+              <span className="font-semibold">
+                {realEstate?.rooms?.bathrooms}
+              </span>
+              <span className="text-gray-600">
+                Bathroom{realEstate?.rooms?.bathrooms !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {/* Kitchens */}
+            <div className="flex gap-2 items-center">
+              <span>
+                <KitchenRoundedIcon sx={{ color: "#FF9800" }} />
+              </span>
+              <span className="font-semibold">
+                {realEstate?.rooms?.kitchens}
+              </span>
+              <span className="text-gray-600">
+                Kitchen{realEstate?.rooms?.kitchens !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
           <div className="">
             <h3 className="font-semibold p-3">Overview</h3>
