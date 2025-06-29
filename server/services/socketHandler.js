@@ -1,129 +1,280 @@
+// import Chats from "../models/Chats.js";
+
+// const socketHandler = (io) => {
+//   global.onlineUsers = new Map();
+
+//   io.on("connection", (socket) => {
+//     console.log(`⚡ New socket connection: ${socket.id}`);
+
+//     // Add user to online users map
+//     socket.on("addUser", (userId) => {
+//       onlineUsers.set(userId, socket.id);
+//       console.log(`👤 User ${userId} connected with socket ${socket.id}`);
+
+//       // Send initial unread count
+//       updateUnreadCounts(userId);
+//     });
+
+//     // Handle message sending
+//     socket.on("sendMsg", async (data) => {
+//       try {
+//         const { to, from, message } = data;
+//         console.log(
+//           `✉️ Message from ${from} to ${to}: ${message.substring(0, 30)}...`
+//         );
+
+//         // Save message to database
+//         const newMessage = await Chats.create({
+//           chatUsers: [from, to],
+//           message,
+//           sender: from,
+//           isRead: false,
+//         });
+
+//         // Get recipient's socket ID
+//         const receiverSocketId = onlineUsers.get(to);
+
+//         if (receiverSocketId) {
+//           // Send message to recipient
+//           io.to(receiverSocketId).emit("receiveMsg", {
+//             _id: newMessage._id,
+//             message: newMessage.message,
+//             from: newMessage.sender,
+//             to,
+//             createdAt: newMessage.createdAt,
+//             isRead: newMessage.isRead,
+//           });
+//           console.log(`📤 Forwarded to ${to} (socket ${receiverSocketId})`);
+//         }
+
+//         // Update unread counts for both users
+//         updateUnreadCounts(from);
+//         updateUnreadCounts(to);
+//       } catch (error) {
+//         console.error("🔴 Error in sendMsg:", error);
+//       }
+//     });
+
+//     // Mark messages as read
+//     socket.on("markAsRead", async (data) => {
+//       try {
+//         const { receiverID, senderId } = data;
+//         console.log(
+//           `📖 Marking messages as read between ${senderId} and ${receiverID}`
+//         );
+
+//         await Chats.updateMany(
+//           {
+//             chatUsers: { $all: [senderId, receiverID] },
+//             sender: senderId,
+//             isRead: false,
+//           },
+//           { $set: { isRead: true } }
+//         );
+
+//         // Update unread counts
+//         updateUnreadCounts(receiverID);
+//         updateUnreadCounts(senderId);
+//       } catch (err) {
+//         console.error("Error marking messages as read:", err);
+//       }
+//     });
+
+//     // Handle disconnection
+//     socket.on("disconnect", () => {
+//       console.log(`🔥 Socket disconnected: ${socket.id}`);
+//       // Remove user from online users map
+//       for (let [userId, socketId] of onlineUsers.entries()) {
+//         if (socketId === socket.id) {
+//           onlineUsers.delete(userId);
+//           console.log(`👋 User ${userId} disconnected`);
+//           break;
+//         }
+//       }
+//     });
+
+//     // Helper function to update unread counts
+//     async function updateUnreadCounts(userId) {
+//       try {
+//         const result = await Chats.aggregate([
+//           {
+//             $match: {
+//               chatUsers: userId,
+//               sender: { $ne: userId },
+//               isRead: false,
+//             },
+//           },
+//           { $group: { _id: "$sender", count: { $sum: 1 } } },
+//         ]);
+
+//         const unreadMessageCount = result.length;
+//         const userSocketId = onlineUsers.get(userId);
+
+//         if (userSocketId) {
+//           io.to(userSocketId).emit("unreadMessageCount", unreadMessageCount);
+//         }
+//       } catch (err) {
+//         console.error("Error updating unread counts:", err);
+//       }
+//     }
+//   });
+// };
+
+// export default socketHandler;
+
 import Chats from "../models/Chats.js";
 
 const socketHandler = (io) => {
   global.onlineUsers = new Map();
 
   io.on("connection", (socket) => {
-    global.chatSocket = socket;
+    console.log(`⚡ New socket connection: ${socket.id}`);
 
+    // Add user to online users map
     socket.on("addUser", (userId) => {
-      onlineUsers.set(userId, socket.id);
+      // Remove existing connection if any
+      if (onlineUsers.has(userId)) {
+        const oldSocketId = onlineUsers.get(userId);
+        io.to(oldSocketId).emit(
+          "forceDisconnect",
+          "Duplicate connection detected"
+        );
+      }
 
-      Chats.aggregate([
-        {
-          $match: {
-            chatUsers: userId,
-            sender: { $ne: userId }, // Exclude messages sent by the user
-            isRead: false,
-          },
-        },
-        { $group: { _id: "$sender", count: { $sum: 1 } } },
-      ])
-        .then((result) => {
-          const unreadMessageCount = result.length;
-          socket.emit("unreadMessageCount", unreadMessageCount);
-        })
-        .catch((err) => {
-          console.error("Error in getting unread message count:", err);
-        });
+      onlineUsers.set(userId, socket.id);
+      console.log(`👤 User ${userId} connected with socket ${socket.id}`);
+      updateUnreadCounts(userId);
     });
 
-    socket.on("sendMsg", async (data) => {
-      try {
-        const { to, from, message } = data;
-        const receiverSocketId = onlineUsers.get(to);
-        // const notification = notificationService.addNotifications(to, {
-        //     type: "NEW_MESSAGE",
-        //     message: `New message from ${from}`,
-        //     senderInfo: {
-        //         userId: from,
-        //         messagePreview: message,
-        //     },
-        // });
-
-        if (receiverSocketId) {
-          // Send the message
-          io.to(receiverSocketId).emit("receiveMsg", {
-            message,
-            from,
-            to,
-          });
-
-          // Send the notification
-          // socket.to(receiverSocketId).emit("newNotification", notification);
-
-          const result = await Chats.aggregate([
-            {
-              $match: {
-                chatUsers: to,
-                sender: { $ne: to },
-                isRead: false,
-              },
-            },
-
-            { $group: { _id: "$sender", count: { $sum: 1 } } },
-          ]);
-
-          const unreadMessageCount = result.length;
-          io.to(receiverSocketId).emit(
-            "unreadMessageCount",
-            unreadMessageCount
-          );
-        }
-      } catch (error) {
-        console.error("Error in sendMsg:", error);
+    // Remove user from online users
+    socket.on("removeUser", (userId) => {
+      if (onlineUsers.get(userId) === socket.id) {
+        onlineUsers.delete(userId);
+        console.log(`👋 User ${userId} intentionally disconnected`);
       }
     });
 
-    // Mark messages from a specific sender as read
+    // Handle message sending
+    socket.on("sendMsg", async (data) => {
+      try {
+        const { to, from, message } = data;
+
+        // Validate recipient is different from sender
+        if (to === from) {
+          console.error("🚫 Cannot send message to self");
+          return;
+        }
+
+        console.log(
+          `✉️ Message from ${from} to ${to}: ${message.substring(0, 30)}...`
+        );
+
+        // Save message to database
+        const newMessage = await Chats.create({
+          chatUsers: [from, to],
+          message,
+          sender: from,
+          isRead: false,
+        });
+
+        // Get recipient's socket ID
+        const receiverSocketId = onlineUsers.get(to);
+
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("receiveMsg", {
+            _id: newMessage._id,
+            message: newMessage.message,
+            from: newMessage.sender,
+            to,
+            createdAt: newMessage.createdAt,
+            isRead: false,
+          });
+          console.log(`📤 Forwarded to ${to} (socket ${receiverSocketId})`);
+        }
+
+        // Also send to sender for their own UI
+        const senderSocketId = onlineUsers.get(from);
+        if (senderSocketId) {
+          io.to(senderSocketId).emit("receiveMsg", {
+            _id: newMessage._id,
+            message: newMessage.message,
+            from: newMessage.sender,
+            to,
+            createdAt: newMessage.createdAt,
+            isRead: true,
+            fromSelf: true,
+          });
+        }
+
+        // Update unread counts
+        updateUnreadCounts(to);
+        updateUnreadCounts(from);
+      } catch (error) {
+        console.error("🔴 Error in sendMsg:", error);
+      }
+    });
+
+    // Mark messages as read
     socket.on("markAsRead", async (data) => {
       try {
         const { receiverID, senderId } = data;
-        // Update messages from the sender to "read"
+        console.log(
+          `📖 Marking messages as read between ${senderId} and ${receiverID}`
+        );
+
         await Chats.updateMany(
-          { chatUsers: { $in: [receiverID] }, sender: senderId, isRead: false },
+          {
+            chatUsers: { $all: [senderId, receiverID] },
+            sender: senderId,
+            isRead: false,
+          },
           { $set: { isRead: true } }
         );
-        // Fetch updated unread senders count for the user
-        const result = await Chats.aggregate([
-          {
-            $match: {
-              chatUsers: receiverID,
-              sender: { $ne: receiverID },
-              isRead: false,
-            },
-          },
-          { $group: { _id: "$sender", count: { $sum: 1 } } },
-        ]);
-        const unreadMessageCount = result.length;
 
-        // Notify the user
-        const receiverSocketId = onlineUsers.get(receiverID);
-
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit(
-            "unreadMessageCount",
-            unreadMessageCount
-          );
-        } else {
-          console.log("receiverSocketId not found");
-        }
+        updateUnreadCounts(receiverID);
+        updateUnreadCounts(senderId);
       } catch (err) {
         console.error("Error marking messages as read:", err);
       }
     });
 
+    // Handle disconnection
     socket.on("disconnect", () => {
-      onlineUsers.forEach((value, key) => {
-        if (value === socket.id) {
-          onlineUsers.delete(key);
+      console.log(`🔥 Socket disconnected: ${socket.id}`);
+      // Clean up online users map
+      for (let [userId, socketId] of onlineUsers.entries()) {
+        if (socketId === socket.id) {
+          onlineUsers.delete(userId);
+          console.log(`👋 User ${userId} disconnected`);
+          break;
         }
-      });
+      }
     });
 
-    socket.on("error", (err) => {
-      console.log(`Socket error: ${err}`);
-    });
+    // Helper function to update unread counts
+    async function updateUnreadCounts(userId) {
+      try {
+        const result = await Chats.aggregate([
+          {
+            $match: {
+              chatUsers: userId,
+              sender: { $ne: userId },
+              isRead: false,
+            },
+          },
+          { $group: { _id: "$sender", count: { $sum: 1 } } },
+        ]);
+
+        const unreadMessageCount = result.length;
+        const userSocketId = onlineUsers.get(userId);
+
+        if (userSocketId) {
+          io.to(userSocketId).emit("unreadMessageCount", unreadMessageCount);
+        }
+      } catch (err) {
+        console.error("Error updating unread counts:", err);
+      }
+    }
   });
 };
 
