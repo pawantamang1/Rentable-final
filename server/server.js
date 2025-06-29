@@ -124,13 +124,16 @@ app.use((req, res, next) => {
 // Make sure your auth routes are properly mounted
 console.log("Auth routes mounted at /api/auth");
 
-// Socket setup
+// Socket.IO server initialization:
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST"],
     credentials: true,
   },
-  connectionStateRecovery: {},
+  transports: ["websocket", "polling"], // Explicitly set transports
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 socketHandler(io);

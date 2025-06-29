@@ -1,3 +1,4 @@
+
 import { io } from "socket.io-client";
 
 // Determine the socket URL based on environment
@@ -15,51 +16,48 @@ const socketUrl = getSocketUrl();
 console.log("🔧 Socket connecting to:", socketUrl);
 
 export const socket = io(socketUrl, {
-  transports: ["websocket", "polling"], // Try both transports
-  timeout: 20000,
+  withCredentials: true,
+  transports: ["websocket", "polling"],
   reconnection: true,
-  reconnectionDelay: 1000,
   reconnectionAttempts: 5,
-  maxReconnectionAttempts: 5,
-  forceNew: false,
-  autoConnect: false, // Don't auto-connect, we'll do it manually
-
-  // Additional options that might help
-  upgrade: true,
-  rememberUpgrade: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  autoConnect: false,
+  forceNew: true,
+  timeout: 20000,
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
-// Add debug listeners
+// Global connection events
 socket.on("connect", () => {
-  console.log("🟢 Socket connected with ID:", socket.id);
-  console.log("🌐 Connected to:", socketUrl);
+  console.log("🟢 [Global] Socket connected with ID:", socket.id);
 });
 
 socket.on("disconnect", (reason) => {
-  console.log("🔴 Socket disconnected:", reason);
+  console.log("🔴 [Global] Socket disconnected:", reason);
 });
 
 socket.on("connect_error", (error) => {
-  console.error("🚨 Socket connection error:", error);
-  console.log("❓ Trying to connect to:", socketUrl);
-
-  // Log additional debugging info
-  console.log("🔍 Error details:", {
-    message: error.message,
-    description: error.description,
-    context: error.context,
-    type: error.type,
+  console.error("🚨 [Global] Socket connection error:", error.message);
+  console.log("Connection details:", {
+    url: socket.io.uri,
+    connected: socket.connected,
+    id: socket.id,
   });
 });
 
-socket.on("reconnect", (attemptNumber) => {
-  console.log("🔄 Socket reconnected after", attemptNumber, "attempts");
-});
-
-socket.on("reconnect_error", (error) => {
-  console.error("🚨 Socket reconnection error:", error);
+socket.on("reconnect_attempt", (attempt) => {
+  console.log(`🔁 [Global] Reconnection attempt ${attempt}`);
 });
 
 socket.on("reconnect_failed", () => {
-  console.error("💀 Socket failed to reconnect");
+  console.error("💀 [Global] Reconnection failed");
+});
+
+// Debug all events (except ping/pong)
+socket.onAny((event, ...args) => {
+  if (!event.includes("ping") && !event.includes("pong")) {
+    console.log(`📡 [Global][${event}]`, args);
+  }
 });
