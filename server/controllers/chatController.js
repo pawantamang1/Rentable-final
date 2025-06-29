@@ -1,7 +1,6 @@
 import Chat from "../models/Chats.js";
 import OwnerUser from "../models/OwnerUser.js";
 import TenantUser from "../models/TenantUser.js";
-import BadRequestError from "../request-errors/BadRequest.js";
 
 /**
  * @description Send message
@@ -71,36 +70,40 @@ const getChats = async (req, res) => {
     },
     {
       $replaceRoot: { newRoot: "$lastMessage" },
-    }
+    },
   ]);
 
   const chatContacts = lastMessages.map((lastMessage) => {
-    const to = lastMessage.chatUsers.find(id => id !== userId)
-    lastMessage.to = to
-    return to
-  })
+    const to = lastMessage.chatUsers.find((id) => id !== userId);
+    lastMessage.to = to;
+    return to;
+  });
   // console.log("lastMessages", lastMessages)
-  let contacts = []
+  let contacts = [];
   if (req.path.includes("tenant")) {
     contacts = await OwnerUser.find({ _id: { $in: chatContacts } }).select(
       "firstName lastName profileImage slug"
     );
   } else if (req.path.includes("owner")) {
-    contacts = await TenantUser.find({ _id: { $in: chatContacts } }).select("firstName lastName profileImage slug");
+    contacts = await TenantUser.find({ _id: { $in: chatContacts } }).select(
+      "firstName lastName profileImage slug"
+    );
   }
   // console.log(contacts)
 
-  const chats = lastMessages.map((lastMessage) => {
-    const contact = contacts.find(
-      (contact) => contact._id.toString() === lastMessage.to
-    );
-    return {
-      ...lastMessage,
-      ...contact?._doc,
-    }
-  }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const chats = lastMessages
+    .map((lastMessage) => {
+      const contact = contacts.find(
+        (contact) => contact._id.toString() === lastMessage.to
+      );
+      return {
+        ...lastMessage,
+        ...contact?._doc,
+      };
+    })
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   return res.status(200).json({ chats });
-}
+};
 
-export { sendMessage, getMessages, getChats };
+export { getChats, getMessages, sendMessage };
