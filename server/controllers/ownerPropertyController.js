@@ -14,6 +14,41 @@ import {
  * @description Post Real Estate
  * @returns {object} realEstate
  */
+// const postRealEstate = async (req, res) => {
+//   const streetName = req.body.streetName;
+//   const city = req.body.city;
+//   const state = req.body.state;
+//   const country = req.body.country;
+
+//   req.body.address = { streetName, city, state, country };
+//   req.body.propertyOwner = req.user.userId;
+//   req.body.propertyId = nanoid(7);
+//   req.body.rooms = {
+//     bedrooms: req.body.bedrooms || 0,
+//     bathrooms: req.body.bathrooms || 0,
+//     kitchens: req.body.kitchens || 1,
+//   };
+
+//   // Handle amenities (ensure fallback defaults if missing)
+//   req.body.amenities = {
+//     furnished: req.body.amenities?.furnished || false,
+//     parking: req.body.amenities?.parking || false,
+//     petFriendly: req.body.amenities?.petFriendly || false,
+//     wifi: req.body.amenities?.wifi || false,
+//     waterSupply: req.body.amenities?.waterSupply ?? true, // default true
+//     balcony: req.body.amenities?.balcony || false,
+//     airConditioning: req.body.amenities?.airConditioning || false,
+//   };
+
+//   const realEstate = await RealEstate.create(req.body);
+
+//   const realEstateImages = await cloudinaryMultipleUpload(req);
+//   realEstate.realEstateImages = realEstateImages;
+//   await realEstate.save();
+
+//   res.status(201).json({ realEstate });
+// };
+
 const postRealEstate = async (req, res) => {
   const streetName = req.body.streetName;
   const city = req.body.city;
@@ -23,14 +58,50 @@ const postRealEstate = async (req, res) => {
   req.body.address = { streetName, city, state, country };
   req.body.propertyOwner = req.user.userId;
   req.body.propertyId = nanoid(7);
+
   req.body.rooms = {
     bedrooms: req.body.bedrooms || 0,
     bathrooms: req.body.bathrooms || 0,
     kitchens: req.body.kitchens || 1,
   };
 
-  const realEstate = await RealEstate.create(req.body);
+  // Helper function to convert array or string to boolean
+  const convertToBoolean = (value) => {
+    if (Array.isArray(value)) {
+      // Take the last value if it's an array
+      value = value[value.length - 1];
+    }
+    if (typeof value === "string") {
+      return (
+        value.toLowerCase() === "true" ||
+        value.toLowerCase() === "on" ||
+        value === "1"
+      );
+    }
+    return Boolean(value);
+  };
 
+  // Handle amenities from request body
+  req.body.amenities = {
+    furnished: req.body.furnished
+      ? convertToBoolean(req.body.furnished)
+      : false,
+    parking: req.body.parking ? convertToBoolean(req.body.parking) : false,
+    petFriendly: req.body.petFriendly
+      ? convertToBoolean(req.body.petFriendly)
+      : false,
+    wifi: req.body.wifi ? convertToBoolean(req.body.wifi) : false,
+    waterSupply:
+      req.body.waterSupply !== undefined
+        ? convertToBoolean(req.body.waterSupply)
+        : true,
+    balcony: req.body.balcony ? convertToBoolean(req.body.balcony) : false,
+    airConditioning: req.body.airConditioning
+      ? convertToBoolean(req.body.airConditioning)
+      : false,
+  };
+
+  const realEstate = await RealEstate.create(req.body);
   const realEstateImages = await cloudinaryMultipleUpload(req);
   realEstate.realEstateImages = realEstateImages;
   await realEstate.save();
