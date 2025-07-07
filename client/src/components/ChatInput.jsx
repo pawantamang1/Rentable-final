@@ -1,6 +1,6 @@
-import { useState } from "react";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { Button } from "@mui/material";
+import { useState } from "react";
 
 const ChatInput = ({ handleSendMessage }) => {
   const [msgInput, setMsgInput] = useState("");
