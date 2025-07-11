@@ -1,16 +1,16 @@
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import {
-  Button,
-  CardActionArea,
   Avatar,
+  Button,
   Card,
+  CardActionArea,
   CardContent,
   CardMedia,
 } from "@mui/material";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import { createNumberFormatter } from "../utils/valueFormatter";
-import { Link } from "react-router-dom";
 import countryToCurrency from "country-to-currency";
+import { Link } from "react-router-dom";
 import { countries } from "../utils/countryList";
+import { createNumberFormatter } from "../utils/valueFormatter";
 
 const RealEstateCard = ({
   title,
@@ -46,28 +46,30 @@ const RealEstateCard = ({
           color: "#102a43",
         }}
       >
-          <CardActionArea>
-            <CardMedia
-              component="img"
-              sx={{ maxHeight: 150 }}
-              image={realEstateImages[0]}
-              alt={title}
-            />
-            <CardContent>
-              <h4
-                className="mb-1 overflow-hidden overflow-ellipsis whitespace-nowrap hover:text-primaryDark transition-all duration-300 ease-in-out"
-                style={{ maxWidth: "31ch" }}
-              >
-                {title}
-              </h4>
-              <p className="text-sm text-gray-400">{category}</p>
-              <p className="font-semibold">
-              {countryToCurrency[currentCountry.code]} <span className="">{format(price)}</span> / month
-              </p>
-              <p className="text-base">
-              <LocationOnOutlinedIcon color="secondary" />{address?.streetName}, {address?.city}
-              </p>
-            </CardContent>
+        <CardActionArea>
+          <CardMedia
+            component="img"
+            sx={{ maxHeight: 150 }}
+            image={realEstateImages?.[0] || "client/src/assets/images/logo.png"}
+            alt={title}
+          />
+          <CardContent>
+            <h4
+              className="mb-1 overflow-hidden overflow-ellipsis whitespace-nowrap hover:text-primaryDark transition-all duration-300 ease-in-out"
+              style={{ maxWidth: "31ch" }}
+            >
+              {title}
+            </h4>
+            <p className="text-sm text-gray-400">{category}</p>
+            <p className="font-semibold">
+              {countryToCurrency[currentCountry.code]}{" "}
+              <span className="">{format(price)}</span> / month
+            </p>
+            <p className="text-base">
+              <LocationOnOutlinedIcon color="secondary" />
+              {address?.streetName}, {address?.city}
+            </p>
+          </CardContent>
         </CardActionArea>
         {/*  render the contact bar only if the user is not the owner of the property */}
         {!fromOwnerUser && !fromUserProfile && (
@@ -99,7 +101,7 @@ const RealEstateCard = ({
             </Link>
           </div>
         )}
-    </Card>
+      </Card>
     </Link>
   );
 };

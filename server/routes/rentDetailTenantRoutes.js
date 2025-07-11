@@ -16,4 +16,5 @@ router.get("/:realEstateId", getSingleRentDetailsTenantView);
  * @route GET /api/rentDetailTenant/allPaymentHistory/:rentDetailId
  */
 router.get("/allPaymentHistory/:rentDetailId", getAllPaymentHistory);
+
 export default router;

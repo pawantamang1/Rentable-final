@@ -1,17 +1,20 @@
 import express from "express";
-const router = express.Router();
 import {
   getAllProperties,
+  getAllSavedProperties,
+  getPropertyRecommendations,
   getSingleProperty,
   savePropertyToggle,
-  getAllSavedProperties,
 } from "../controllers/tenantPropertyControllers.js";
+const router = express.Router();
 
 /**
  * @description Get all properties
  * @route GET /api/tenant/real-estate
  */
 router.get("/", getAllProperties);
+
+router.get("/recommendations", getPropertyRecommendations);
 
 /**
  * @description Get single property
@@ -30,5 +33,7 @@ router.patch("/save/:id", savePropertyToggle);
  * @route GET /api/tenant/real-estate/save/all
  */
 router.get("/saved/all", getAllSavedProperties);
+
+
 
 export default router;

@@ -1,3 +1,5 @@
 /node_modules
 .env
 vite.config.mjs
+client/vite.config.mjs
+

@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosFetch from "../../utils/axiosCreate";
 
 export const getAllRealEstate = createAsyncThunk(
@@ -95,6 +95,20 @@ export const sendComplaintToOwner = createAsyncThunk(
   }
 );
 
+export const getRecommendedProperties = createAsyncThunk(
+  "getRecommendedProperties",
+  async ({ limit = 5 }, thunkAPI) => {
+    try {
+      const { data } = await axiosFetch.get(
+        `/tenant/real-estate/recommendations?limit=${limit}`
+      );
+      return data.recommendations;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response.data.msg);
+    }
+  }
+);
+
 const realEstateTenantSlice = createSlice({
   name: "realEstateTenant",
   initialState: {
@@ -109,6 +123,8 @@ const realEstateTenantSlice = createSlice({
     isProcessing: false,
     allRentalProperties: null,
     success: null,
+    recommendedProperties: null,
+    recommendedIsLoading: false,
   },
   reducers: {
     clearAlert: (state) => {
@@ -191,6 +207,19 @@ const realEstateTenantSlice = createSlice({
       })
       .addCase(sendEmailToOwner.rejected, (state, action) => {
         state.isProcessing = false;
+        state.alertFlag = true;
+        state.alertMsg = action.payload;
+        state.alertType = "error";
+      })
+      .addCase(getRecommendedProperties.pending, (state) => {
+        state.recommendedIsLoading = true;
+      })
+      .addCase(getRecommendedProperties.fulfilled, (state, action) => {
+        state.recommendedIsLoading = false;
+        state.recommendedProperties = action.payload;
+      })
+      .addCase(getRecommendedProperties.rejected, (state, action) => {
+        state.recommendedIsLoading = false;
         state.alertFlag = true;
         state.alertMsg = action.payload;
         state.alertType = "error";
