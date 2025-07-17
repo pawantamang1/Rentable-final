@@ -1,12 +1,12 @@
-import { useEffect, useState, useContext } from "react";
-import { useLocation } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
+import { ChatMessages, ChatUsers, PageLoading } from "../../components";
 import {
-  getOwnerChats,
   addOwnerRecentMessage,
-  markChatAsRead
+  getOwnerChats,
+  markChatAsRead,
 } from "../../features/ownerUser/ownerUserSlice";
-import { PageLoading, ChatUsers, ChatMessages } from "../../components";
 import { socket } from "../../socket";
 import { SocketContext } from "../../utils/SocketContext";
 
@@ -96,11 +96,11 @@ const OwnerChat = () => {
             </p>
           </div>
         ) : (
-            <ChatMessages
-              chat={currentChat}
-              currentUser={user}
-              handleCurrentChatChange={handleCurrentChatChange}
-            />
+          <ChatMessages
+            chat={currentChat}
+            currentUser={user}
+            handleCurrentChatChange={handleCurrentChatChange}
+          />
         )}
       </div>
     </div>
