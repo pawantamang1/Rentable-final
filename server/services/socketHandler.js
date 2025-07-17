@@ -154,64 +154,40 @@ const socketHandler = (io) => {
       }
     });
 
-    // Handle message sending
-    socket.on("sendMsg", async (data) => {
-      try {
-        const { to, from, message } = data;
+    socket.on("sendMsg", (data) => {
+      const { to, from, message } = data;
 
-        // Validate recipient is different from sender
-        if (to === from) {
-          console.error("🚫 Cannot send message to self");
-          return;
-        }
-
-        console.log(
-          `✉️ Message from ${from} to ${to}: ${message.substring(0, 30)}...`
-        );
-
-        // Save message to database
-        const newMessage = await Chats.create({
-          chatUsers: [from, to],
-          message,
-          sender: from,
-          isRead: false,
-        });
-
-        // Get recipient's socket ID
-        const receiverSocketId = onlineUsers.get(to);
-
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit("receiveMsg", {
-            _id: newMessage._id,
-            message: newMessage.message,
-            from: newMessage.sender,
-            to,
-            createdAt: newMessage.createdAt,
-            isRead: false,
-          });
-          console.log(`📤 Forwarded to ${to} (socket ${receiverSocketId})`);
-        }
-
-        // Also send to sender for their own UI
-        const senderSocketId = onlineUsers.get(from);
-        if (senderSocketId) {
-          io.to(senderSocketId).emit("receiveMsg", {
-            _id: newMessage._id,
-            message: newMessage.message,
-            from: newMessage.sender,
-            to,
-            createdAt: newMessage.createdAt,
-            isRead: true,
-            fromSelf: true,
-          });
-        }
-
-        // Update unread counts
-        updateUnreadCounts(to);
-        updateUnreadCounts(from);
-      } catch (error) {
-        console.error("🔴 Error in sendMsg:", error);
+      if (to === from) {
+        console.error("🚫 Cannot send message to self");
+        return;
       }
+
+      console.log(`📡 Broadcasting message from ${from} to ${to}`);
+
+      const msgPayload = {
+        message,
+        from,
+        to,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+      };
+
+      const receiverSocketId = onlineUsers.get(to);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("receiveMsg", msgPayload);
+        console.log(`📤 Forwarded to ${to} (socket ${receiverSocketId})`);
+      }
+
+      const senderSocketId = onlineUsers.get(from);
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("receiveMsg", {
+          ...msgPayload,
+          fromSelf: true,
+          isRead: true,
+        });
+      }
+
+      // ❌ Do NOT call updateUnreadCounts or save to DB
     });
 
     // Mark messages as read
