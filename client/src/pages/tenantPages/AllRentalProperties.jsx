@@ -1,20 +1,20 @@
-import { useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { getAllTenantRentalProperties } from "../../features/realEstateTenant/realEstateTenantSlice";
-import { PageLoading, Footer } from "../../components";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
 import {
+  Avatar,
   Button,
   Card,
-  CardMedia,
-  CardContent,
   CardActionArea,
-  Avatar,
+  CardContent,
+  CardMedia,
 } from "@mui/material";
-import { createNumberFormatter, format } from "../../utils/valueFormatter";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import { countries } from "../../utils/countryList";
 import countryToCurrency from "country-to-currency";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { Footer, PageLoading } from "../../components";
+import { getAllTenantRentalProperties } from "../../features/realEstateTenant/realEstateTenantSlice";
+import { countries } from "../../utils/countryList";
+import { createNumberFormatter } from "../../utils/valueFormatter";
 
 const AllRentalProperties = () => {
   const dispatch = useDispatch();
@@ -96,7 +96,8 @@ const AllRentalProperties = () => {
                       </h4>
                       <p className="text-sm text-gray-400">{category}</p>
                       <p className="font-semibold">
-                        {countryToCurrency[currentCountry.code]} <span className="">{format(price)}</span> / month
+                        {countryToCurrency[currentCountry.code]}{" "}
+                        <span className="">{format(price)}</span> / month
                       </p>
                       <p className="text-base">
                         <LocationOnOutlinedIcon color="secondary" />

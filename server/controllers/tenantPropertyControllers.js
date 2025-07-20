@@ -232,17 +232,19 @@ const getAllSavedProperties = async (req, res) => {
  */
 const getPropertyRecommendations = async (req, res) => {
   const { userId } = req.user;
-  const { limit = 6 } = req.query; // Increased default limit to accommodate saved properties
+  const { limit = 6 } = req.query;
 
   try {
     // Get current tenant user with saved properties
     const currentTenantUser = await TenantUser.findById(userId).populate({
       path: "savedProperties",
-      select: "category price area rooms address amenities",
+      // Include realEstateImages and other necessary fields
+      select:
+        "category price area rooms address amenities realEstateImages title slug status",
       populate: {
         path: "propertyOwner",
         select: "-password -createdAt -updatedAt -__v -contacts",
-      }
+      },
     });
 
     if (!currentTenantUser) {
@@ -272,26 +274,36 @@ const getPropertyRecommendations = async (req, res) => {
     // For each saved property, find the most similar property
     let similarProperties = [];
     const maxSimilarPerSaved = 1; // Only get 1 similar property per saved property
-    
+
     for (const savedProp of savedProperties) {
       const similar = availableProperties
-        .map(prop => ({
+        .map((prop) => ({
           property: prop,
-          similarity: calculateSimpleSimilarity(savedProp, prop)
+          similarity: calculateSimpleSimilarity(savedProp, prop),
         }))
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, maxSimilarPerSaved)
-        .map(item => item.property);
-      
+        .map((item) => item.property);
+
       similarProperties.push(...similar);
     }
 
+    // Remove duplicates from similar properties
+    const uniqueSimilarProperties = similarProperties.filter(
+      (property, index, self) =>
+        index ===
+        self.findIndex((p) => p._id.toString() === property._id.toString())
+    );
+
+    // Convert both to plain objects to ensure consistency
+    const savedPropsObjects = savedProperties.map((prop) => prop.toObject());
+    const similarPropsObjects = uniqueSimilarProperties.map((prop) =>
+      prop.toObject()
+    );
+
     // Combine saved properties and similar properties
     // Saved properties come first
-    const recommendations = [
-      ...savedProperties.map(prop => prop.toObject()), // Convert Mongoose documents to plain objects
-      ...similarProperties
-    ];
+    const recommendations = [...savedPropsObjects, ...similarPropsObjects];
 
     // Limit results while preserving order (saved properties first)
     const finalRecommendations = recommendations.slice(0, parseInt(limit));
@@ -504,6 +516,5 @@ export {
   getAllSavedProperties,
   getPropertyRecommendations,
   getSingleProperty,
-  savePropertyToggle
+  savePropertyToggle,
 };
-
