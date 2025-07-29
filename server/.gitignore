@@ -2,4 +2,5 @@
 .env
 vite.config.mjs
 client/vite.config.mjs
+client/.env
 

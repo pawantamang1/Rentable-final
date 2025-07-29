@@ -586,6 +586,100 @@ const logout = (req, res) => {
   res.json({ message: "Cookie cleared" });
 };
 
+
+// admin authentication and authorization
+import AdminUser from "../models/admin.js";
+
+const registerAdmin = async (req, res) => {
+  const { email, firstName, lastName } = req.body;
+
+  const existing = await AdminUser.findOne({ email });
+  if (existing) throw new BadRequestError("Email already registered");
+
+  const verificationToken = jwt.sign(
+    { email },
+    process.env.EMAIL_VERIFICATION_KEY,
+    { expiresIn: "1d" }
+  );
+
+  req.body.accountVerificationToken = verificationToken;
+
+  const admin = await AdminUser.create(req.body);
+
+  const to = email;
+  const from = process.env.EMAIL_USER;
+  const subject = "Admin Account Verification";
+  const body = `
+    <p>Hello ${firstName} ${lastName},</p>
+    <p>Click the link to verify your admin account:</p>
+    <a href="${process.env.CLIENT_URL}/#/verify-account/admin/${verificationToken}">Verify Account</a>
+  `;
+
+  await sendEmail(to, from, subject, body);
+
+  res.status(201).json({ success: true, email: admin.email, userType: "admin" });
+};
+
+const loginAdmin = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) throw new BadRequestError("Email and password required");
+
+  const admin = await AdminUser.findOne({ email }).select("+password");
+  if (!admin) throw new UnAuthorizedError("Admin not found");
+
+  const isMatch = await admin.matchPassword(password);
+  if (!isMatch) throw new UnAuthorizedError("Incorrect password");
+
+  if (!admin.accountStatus) {
+    return res.status(200).json({
+      message: "Account not verified",
+      email: admin.email,
+      userType: "admin",
+      accountStatus: false,
+    });
+  }
+
+  const accessToken = admin.createAccessToken();
+  const refreshToken = admin.createRefreshToken();
+
+  res.cookie("jwt", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  admin.password = undefined;
+  res.status(200).json({
+    admin,
+    accessToken,
+    userType: "admin",
+    accountStatus: admin.accountStatus,
+  });
+};
+
+const refreshAdmin = async (req, res) => {
+  const cookie = req.cookies;
+  if (!cookie?.jwt) throw new UnAuthorizedError("Refresh token missing");
+
+  const refreshToken = cookie.jwt;
+  try {
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET_ADMIN);
+    const admin = await AdminUser.findById(payload.userId);
+    if (!admin) throw new UnAuthorizedError("Admin not found");
+
+    const accessToken = admin.createAccessToken();
+    res.json({ accessToken });
+  } catch (err) {
+    throw new UnAuthorizedError("Invalid refresh token");
+  }
+};
+
+
+
+
+
 export {
   forgotPassword,
   login,
@@ -596,4 +690,7 @@ export {
   resendVerificationEmail,
   resetPassword,
   verifyAccount,
+  registerAdmin,
+  loginAdmin,
+  refreshAdmin
 };

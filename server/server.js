@@ -167,6 +167,7 @@ import ownerRentDetailRoutes from "./routes/rentDetailOwnerRoutes.js";
 import tenantRentDetailRoutes from "./routes/rentDetailTenantRoutes.js";
 import tenantPropertyRoutes from "./routes/tenantPropertyRoutes.js";
 import tenantUserRoutes from "./routes/tenantUserRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js"; 
 
 import { Server } from "socket.io";
 import errorHandlerMiddleware from "./middleware/error-handler.js";
@@ -242,6 +243,9 @@ app.use("/api/rentDetail", authorizeOwnerUser, ownerRentDetailRoutes);
 app.use("/api/tenant/real-estate", authorizeTenantUser, tenantPropertyRoutes);
 app.use("/api/tenant", authorizeTenantUser, tenantUserRoutes);
 app.use("/api/rentDetailTenant", authorizeTenantUser, tenantRentDetailRoutes);
+
+// 7. ADMIN routes (no auth middleware needed)
+app.use("/api/admin", adminRoutes);
 
 // =============================================================================
 // DEBUGGING MIDDLEWARE (ADD THIS TEMPORARILY)
