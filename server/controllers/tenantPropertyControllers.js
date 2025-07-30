@@ -242,6 +242,95 @@ const getPropertyRecommendations = async (req, res) => {
     throw error;
   }
 };
+
+/**
+ * @description Recommend properties similar to a currently viewed one
+ * @route GET /api/tenant/real-estate/recommendations/:propertyId
+ * @returns {object} recommendations array
+ */
+const getCollaborativeRecommendations = async (req, res) => {
+  const { propertyId } = req.params;
+  const { limit = 6 } = req.query;
+
+  try {
+    // Get the property being viewed
+    const currentProperty = await RealEstate.findById(propertyId).lean();
+
+    if (!currentProperty) {
+      return res
+        .status(404)
+        .json({ message: `Property with ID ${propertyId} not found` });
+    }
+
+    // Get other active properties (excluding the current one)
+    const otherProperties = await RealEstate.find({
+      _id: { $ne: propertyId },
+      status: true,
+    })
+      .populate({
+        path: "propertyOwner",
+        select: "-password -createdAt -updatedAt -__v -contacts",
+      })
+      .lean();
+
+    // Calculate similarity with all other properties
+    const similarProperties = otherProperties
+      .map((property) => ({
+        property,
+        similarity: calculatePropertySimilarity(currentProperty, property),
+      }))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, parseInt(limit)) // Top N
+      .map((item) => item.property);
+
+    console.log(similarProperties);
+    return res.json({
+      recommendations: similarProperties,
+      message: "Recommended similar properties",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+function calculatePropertySimilarity(prop1, prop2) {
+  let score = 0;
+
+  // Category match
+  if (prop1.category === prop2.category) score += 2;
+
+  // Facing direction
+  if (prop1.facing === prop2.facing) score += 1;
+
+  // Price similarity (smaller difference = higher score)
+  const priceDiff = Math.abs(prop1.price - prop2.price);
+  score += Math.max(0, 2 - priceDiff / 50000); // Max score 2
+
+  // Area similarity
+  const areaDiff = Math.abs(prop1.area - prop2.area);
+  score += Math.max(0, 1.5 - areaDiff / 200); // Max score 1.5
+
+  // Rooms match
+  const roomScore = (r1, r2, weight = 0.5) =>
+    1 - Math.min(1, Math.abs(r1 - r2) / 5) * weight;
+  score += roomScore(prop1.rooms.bedrooms, prop2.rooms.bedrooms);
+  score += roomScore(prop1.rooms.bathrooms, prop2.rooms.bathrooms);
+  score += roomScore(prop1.rooms.kitchens, prop2.rooms.kitchens);
+
+  // Amenities match (boolean overlap)
+  const amenityKeys = Object.keys(prop1.amenities || {});
+  let sharedAmenities = 0;
+  for (const key of amenityKeys) {
+    if (prop1.amenities[key] === true && prop2.amenities[key] === true) {
+      sharedAmenities += 1;
+    }
+  }
+  score += sharedAmenities * 0.2; // Each amenity match gives +0.2
+
+  return score;
+}
+
 /**
  * Simplified similarity calculation between two properties
  */
