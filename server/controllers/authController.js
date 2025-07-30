@@ -266,6 +266,75 @@ const verifyAccount = (req, res) => {
         });
       }
     );
+  } else if (role === "tenant") {
+    //verify token
+    jwt.verify(
+      token,
+      process.env.EMAIL_VERIFICATION_KEY,
+      async (error, payload) => {
+        if (error) {
+          return res.status(400).json({ msg: "Invalid or expired token" });
+        }
+        //find user with token and email
+        const user = await TenantUser.findOne({
+          accountVerificationToken: token,
+          email: payload.email,
+        });
+        if (!user) {
+          return res
+            .status(400)
+            .json({ msg: "User with this token was not found" });
+        }
+
+        // update user account status
+        user.accountStatus = true;
+        user.accountVerificationToken = "";
+
+        user.save((err, result) => {
+          if (err) {
+            return res
+              .status(400)
+              .json({ msg: "Error occurred while updating user status" });
+          } else {
+            return res.json({ msg: "User successfully verified" });
+          }
+        });
+      }
+    );
+  } else if (role === "admin") {
+    jwt.verify(
+      token,
+      process.env.EMAIL_VERIFICATION_KEY,
+      async (error, payload) => {
+        if (error) {
+          return res.status(400).json({ msg: "Invalid or expired token" });
+        }
+
+        const user = await AdminUser.findOne({
+          accountVerificationToken: token,
+          email: payload.email,
+        });
+
+        if (!user) {
+          return res
+            .status(400)
+            .json({ msg: "User with this token was not found" });
+        }
+
+        user.accountStatus = true;
+        user.accountVerificationToken = "";
+
+        user.save((err, result) => {
+          if (err) {
+            return res
+              .status(400)
+              .json({ msg: "Error occurred while updating user status" });
+          } else {
+            return res.json({ msg: "User successfully verified" });
+          }
+        });
+      }
+    );
   } else {
     throw new BadRequestError("Invalid Role");
   }
@@ -586,7 +655,6 @@ const logout = (req, res) => {
   res.json({ message: "Cookie cleared" });
 };
 
-
 // admin authentication and authorization
 import AdminUser from "../models/admin.js";
 
@@ -617,13 +685,16 @@ const registerAdmin = async (req, res) => {
 
   await sendEmail(to, from, subject, body);
 
-  res.status(201).json({ success: true, email: admin.email, userType: "admin" });
+  res
+    .status(201)
+    .json({ success: true, email: admin.email, userType: "admin" });
 };
 
 const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) throw new BadRequestError("Email and password required");
+  if (!email || !password)
+    throw new BadRequestError("Email and password required");
 
   const admin = await AdminUser.findOne({ email }).select("+password");
   if (!admin) throw new UnAuthorizedError("Admin not found");
@@ -665,7 +736,10 @@ const refreshAdmin = async (req, res) => {
 
   const refreshToken = cookie.jwt;
   try {
-    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET_ADMIN);
+    const payload = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET_ADMIN
+    );
     const admin = await AdminUser.findById(payload.userId);
     if (!admin) throw new UnAuthorizedError("Admin not found");
 
@@ -676,21 +750,17 @@ const refreshAdmin = async (req, res) => {
   }
 };
 
-
-
-
-
 export {
   forgotPassword,
   login,
+  loginAdmin,
   logout,
+  refreshAdmin,
   refreshOwner,
   refreshTenant,
   register,
+  registerAdmin,
   resendVerificationEmail,
   resetPassword,
   verifyAccount,
-  registerAdmin,
-  loginAdmin,
-  refreshAdmin
 };

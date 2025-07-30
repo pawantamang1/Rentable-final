@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosFetch from "../../utils/axiosCreate";
 
 const user = localStorage.getItem("user");
@@ -128,6 +128,54 @@ export const resetPassword = createAsyncThunk(
       return await data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response.data.msg);
+    }
+  }
+);
+
+export const loginAdmin = createAsyncThunk(
+  "loginAdmin",
+  async ({ userInfo }, thunkAPI) => {
+    try {
+      const { data } = await axiosFetch.post("/admin/login-admin", userInfo);
+
+      if (data.accountStatus) {
+        localStorage.setItem("user", JSON.stringify(data.admin));
+        localStorage.setItem("token", data.accessToken);
+        localStorage.setItem("userType", data.userType);
+        localStorage.removeItem("email");
+      } else {
+        localStorage.setItem("email", data.email);
+      }
+
+      return data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.msg || "Admin login failed"
+      );
+    }
+  }
+);
+
+export const registerAdmin = createAsyncThunk(
+  "registerAdmin",
+  async ({ adminData }, thunkAPI) => {
+    try {
+      // Send JSON data instead of FormData
+      const { data } = await axiosFetch.post(
+        "/admin/register-admin",
+        adminData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      localStorage.setItem("email", data.email);
+      return data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.msg || "Admin registration failed"
+      );
     }
   }
 );
@@ -311,6 +359,37 @@ const authSlice = createSlice({
         state.errorMsg = "Logged out successfully";
       })
       .addCase(logOut.rejected, (state, action) => {
+        state.isLoading = false;
+        state.errorFlag = true;
+        state.errorMsg = action.payload;
+        state.alertType = "error";
+      })
+      .addCase(loginAdmin.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(loginAdmin.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.admin;
+        state.token = action.payload.accessToken;
+        state.userType = action.payload.userType;
+        state.accountStatus = action.payload.accountStatus;
+        state.success = true;
+      })
+      .addCase(loginAdmin.rejected, (state, action) => {
+        state.isLoading = false;
+        state.errorFlag = true;
+        state.errorMsg = action.payload;
+        state.alertType = "error";
+      })
+      .addCase(registerAdmin.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(registerAdmin.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.userType = action.payload.userType;
+        state.success = true;
+      })
+      .addCase(registerAdmin.rejected, (state, action) => {
         state.isLoading = false;
         state.errorFlag = true;
         state.errorMsg = action.payload;

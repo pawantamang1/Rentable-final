@@ -1,25 +1,26 @@
-import { useEffect, useState, useCallback } from "react";
-import {
-  Logo,
-  FormTextField,
-  FormPasswordField,
-  FormSelectField,
-  AlertToast,
-  DatePicker,
-  CountrySelectField,
-} from "../components";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  registerOwner,
-  registerTenant,
-  clearAlert,
-  stateClear,
-  createAlert,
-} from "../features/auth/authSlice";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import registerImg from "../assets/images/registerImg.svg";
 import { Button, CircularProgress } from "@mui/material";
 import moment from "moment";
+import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import registerImg from "../assets/images/registerImg.svg";
+import {
+  AlertToast,
+  CountrySelectField,
+  DatePicker,
+  FormPasswordField,
+  FormSelectField,
+  FormTextField,
+  Logo,
+} from "../components";
+import {
+  clearAlert,
+  createAlert,
+  registerAdmin,
+  registerOwner,
+  registerTenant,
+  stateClear,
+} from "../features/auth/authSlice";
 import { ageCalculator } from "../utils/valueFormatter";
 
 const Register = () => {
@@ -81,8 +82,23 @@ const Register = () => {
     const dob = moment(date).format("YYYY-MM-DD");
     const age = ageCalculator(dob);
     if (age < 18) {
-      dispatch(
-        createAlert("You must be 18 years or older to register"))
+      dispatch(createAlert("You must be 18 years or older to register"));
+      return;
+    }
+    // For admin registration, send JSON data
+    if (param.role === "admin") {
+      const adminData = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        password: values.password,
+        phoneNumber: values.phoneNumber,
+        role: "admin", // or get this from somewhere else if needed
+        // Note: We're not including profileImage for now since it requires file upload
+      };
+
+      console.log("Sending admin data:", adminData);
+      dispatch(registerAdmin({ adminData }));
       return;
     }
     formData.append("dateOfBirth", moment(date).format("YYYY-MM-DD"));
@@ -118,7 +134,7 @@ const Register = () => {
 
       <main className="px-6 h-full mt-12 mb-12">
         <div className="flex md:justify-around justify-center g-6">
-            <form onSubmit={handleSubmit} id="form">
+          <form onSubmit={handleSubmit} id="form">
             <div className="flex flex-col w-full gap-6">
               <div className="flex justify-center w-full">
                 <h3 className="text-center">Register for your new account</h3>
@@ -258,7 +274,7 @@ const Register = () => {
                 </p>
               </div>
             </div>
-            </form>
+          </form>
           <div className="hidden mb-12 md:mb-0 md:block mt-8 w-1/2">
             <img src={registerImg} className="w-full" alt="login banner" />
           </div>

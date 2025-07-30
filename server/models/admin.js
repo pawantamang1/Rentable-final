@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import slug from "mongoose-slug-generator";
+mongoose.plugin(slug);
 
 const AdminUserSchema = new mongoose.Schema(
   {

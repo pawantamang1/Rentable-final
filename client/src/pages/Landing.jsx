@@ -1,10 +1,10 @@
-import { useEffect, useCallback, useRef } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useCallback, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Logo, AlertToast, Footer } from "../components";
 import landingImg from "../assets/images/landing1.svg";
 import landingImg2 from "../assets/images/landing2.svg";
 import landingTitle from "../assets/images/landingTitle.svg";
+import { AlertToast, Footer, Logo } from "../components";
 
 import { Button } from "@mui/material";
 import { clearAlert } from "../features/auth/authSlice";
@@ -191,6 +191,36 @@ const Landing = () => {
                   Register
                 </Button>
               </div>
+            </div>
+          </section>
+          <hr className="my-6" />
+
+          <section className="flex flex-col items-center mt-8">
+            <h3 className="font-display mb-4 text-xl">Admin Access</h3>
+            <div className="flex gap-4">
+              <Button
+                onClick={() => navigate("/login/admin")}
+                variant="contained"
+                size="medium"
+                color="secondary"
+                sx={{
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "secondary.dark",
+                    opacity: [0.9, 0.8, 0.7],
+                  },
+                }}
+              >
+                Admin Login
+              </Button>
+              <Button
+                onClick={() => navigate("/register/admin")}
+                variant="outlined"
+                size="medium"
+                color="primary"
+              >
+                Admin Register
+              </Button>
             </div>
           </section>
         </main>

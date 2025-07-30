@@ -1,21 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
+import { Button } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import loginImg from "../assets/images/loginImg.svg";
 import {
-  Logo,
+  AlertToast,
   FormPasswordField,
   FormTextField,
-  AlertToast,
+  Logo,
 } from "../components";
-import { useDispatch, useSelector } from "react-redux";
 import {
   clearAlert,
+  loginAdmin,
   loginOwner,
   loginTenant,
   stateClear,
 } from "../features/auth/authSlice";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import loginImg from "../assets/images/loginImg.svg";
-import { Button } from "@mui/material";
-import CircularProgress from "@mui/material/CircularProgress";
 
 const Login = () => {
   const {
@@ -61,6 +62,8 @@ const Login = () => {
       dispatch(loginOwner({ userInfo }));
     } else if (param.role === "tenant") {
       dispatch(loginTenant({ userInfo }));
+    } else if (param.role === "admin") {
+      dispatch(loginAdmin({ userInfo }));
     }
   };
 
