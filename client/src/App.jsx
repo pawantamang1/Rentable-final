@@ -13,6 +13,7 @@ import {
   CreatePaymentHistory,
   CreateRentDetail,
   ForgotPassword,
+  HomepageAdmin,
   HomepageOwner,
   HomepageTenant,
   Landing,
@@ -179,6 +180,18 @@ function App() {
             <Route path="*" element={<NotFound />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="privacy" element={<PrivacyPoliciesPage />} />
+            <Route
+              path="/admin"
+              element={
+                <SocketProvider>
+                  <ProtectedRoutes source={"admin"}>
+                    <SharedLayout />
+                  </ProtectedRoutes>
+                </SocketProvider>
+              }
+            >
+              <Route index element={<HomepageAdmin />} />
+            </Route>
           </Routes>
         </Router>
         {/* <SocketDebugger /> */}
