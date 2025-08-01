@@ -1,68 +1,146 @@
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Button, CircularProgress, IconButton, Tooltip } from "@mui/material";
+import axios from "axios";
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { getPersonalRealEstate } from "../../features/realEstateOwner/realEstateOwnerSlice";
-import { Footer, RealEstateCard } from "../../components";
-import { Button, Pagination, CircularProgress } from "@mui/material";
+import { AlertToast, ConfirmModal, PageLoading } from "../../components";
 
 const Homepage = () => {
-  const dispatch = useDispatch();
+  const [properties, setProperties] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deleteSlug, setDeleteSlug] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [alert, setAlert] = useState({ open: false, type: "", msg: "" });
 
-  const { allRealEstate, isLoading, numberOfPages } = useSelector(
-    (store) => store.realEstateOwner
-  );
-
-  // state to store page number
-  const [page, setPage] = useState(1);
-
-  useEffect(() => {
-    dispatch(getPersonalRealEstate({ page }));
-  }, [dispatch, page]);
-
-  const handlePageChange = (event, value) => {
-    setPage(value);
+  const fetchProperties = async () => {
+    try {
+      const response = await axios.get("/api/admin/saved-properties");
+      setProperties(response.data.allSavedProperties);
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+      setAlert({
+        open: true,
+        type: "error",
+        msg: "Failed to fetch properties",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (allRealEstate?.length === 0)
-    return (
-      <div className="mx-auto text-center mt-8">
-        <h4 className="mb-4">You have not posted any properties</h4>
-        <Button
-          href="/#/owner/property/post"
-          variant="contained"
-          sx={{ color: "#fff" }}
-        >
-          Post Property
-        </Button>
-      </div>
-    );
-  return (
-    <>
-      <div className="flex flex-col mt-8 mb-12 md:items-start md:ml-10">
-        <h3 className="my-4 font-heading font-bold text-center">
-          Your {allRealEstate?.length > 1 ? "Properties" : "Property"}
-        </h3>
-        {isLoading ? (
-          <div className="flex justify-center mt-12 h-64 mx-auto">
-            <CircularProgress size={"6rem"} />
-          </div>
-        ) : (
-          <main className="flex flex-wrap gap-8 justify-center md:justify-start mx-4 md:mx-0">
-            {allRealEstate?.map((item) => {
-              return <RealEstateCard key={item._id} {...item} fromOwnerUser />;
-            })}
-          </main>
-        )}
-      </div>
+  useEffect(() => {
+    fetchProperties();
+  }, []);
 
-      <Pagination
-        count={numberOfPages || 1}
-        page={page}
-        onChange={handlePageChange}
-        color="secondary"
-        className="flex justify-center mb-12"
+  const handleDeleteConfirm = async () => {
+    if (!deleteSlug) return;
+    setIsProcessing(true);
+    try {
+      await axios.delete(`/api/v1/admin/delete-property/${deleteSlug}`);
+      setProperties((prev) =>
+        prev.filter((property) => property.slug !== deleteSlug)
+      );
+      setAlert({
+        open: true,
+        type: "success",
+        msg: "Property deleted successfully",
+      });
+    } catch (error) {
+      console.error("Delete failed:", error);
+      setAlert({
+        open: true,
+        type: "error",
+        msg: "Delete failed. Please try again.",
+      });
+    } finally {
+      setDeleteSlug(null);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleAlertClose = () => {
+    setAlert({ open: false, msg: "", type: "" });
+  };
+
+  if (isLoading) return <PageLoading />;
+
+  return (
+    <main className="mx-4 mt-10 mb-12">
+      <h2 className="font-heading text-2xl font-bold mb-6">Admin Dashboard</h2>
+
+      {properties.length === 0 ? (
+        <p>No properties found.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {properties.map((property) => (
+            <div
+              key={property._id}
+              className="rounded-lg border shadow-md p-4 flex flex-col justify-between"
+            >
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-1">{property.title}</h3>
+                <p className="text-sm text-gray-600">
+                  Owner: {property.propertyOwner?.firstName}{" "}
+                  {property.propertyOwner?.lastName}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Saved By: {property.savedBy.name} ({property.savedBy.email})
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Location: {property?.address?.city},{" "}
+                  {property?.address?.country}
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Tooltip title="Delete Property">
+                  <IconButton
+                    onClick={() => setDeleteSlug(property.slug)}
+                    color="error"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        open={Boolean(deleteSlug)}
+        handleModalClose={() => setDeleteSlug(null)}
+      >
+        <h3 className="text-center">Delete This Property?</h3>
+        <p className="text-center my-4 text-sm">
+          Are you sure you want to delete this property? This action is
+          irreversible.
+        </p>
+        <div className="flex justify-center gap-4 mt-6">
+          <Button
+            onClick={() => setDeleteSlug(null)}
+            color="secondary"
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+            disabled={isProcessing}
+          >
+            {isProcessing ? <CircularProgress size={24} /> : "Delete"}
+          </Button>
+        </div>
+      </ConfirmModal>
+
+      <AlertToast
+        alertFlag={alert.open}
+        alertType={alert.type}
+        alertMsg={alert.msg}
+        handleClose={handleAlertClose}
       />
-      <Footer />
-    </>
+    </main>
   );
 };
 
