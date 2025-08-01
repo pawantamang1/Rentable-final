@@ -34,7 +34,7 @@ const getAllProperties = async (req, res) => {
     .sort({ createdAt: -1 });
 
   const page = Number(req.query.page) || 1;
-  const limit = Number(req.query.limit) || 5;
+  const limit = Number(req.query.limit) || 12;
   const skip = (page - 1) * limit;
 
   realEstateResult = realEstateResult.skip(skip).limit(limit);
@@ -156,6 +156,176 @@ const getAllSavedProperties = async (req, res) => {
  * @route GET /api/tenant/real-estate/recommendations
  * @returns {object} recommendations array
  */
+// const getPropertyRecommendations = async (req, res) => {
+//   const { userId } = req.user;
+//   const { limit = 10 } = req.query;
+
+//   try {
+//     // Get current tenant user with saved properties
+//     const currentTenantUser = await TenantUser.findById(userId).populate({
+//       path: "savedProperties",
+//       select: "category price area rooms address amenities",
+//     });
+
+//     if (!currentTenantUser) {
+//       throw new NotFoundError(`User with id: ${userId} not found`);
+//     }
+
+//     const savedProperties = currentTenantUser.savedProperties;
+
+//     // If user has no saved properties, return popular properties
+//     if (savedProperties.length === 0) {
+//       const popularProperties = await RealEstate.find({ status: true })
+//         .populate({
+//           path: "propertyOwner",
+//           select: "-password -createdAt -updatedAt -__v -contacts",
+//         })
+//         .sort({ createdAt: -1 })
+//         .limit(parseInt(limit));
+
+//       return res.json({
+//         recommendations: popularProperties,
+//         message: "Popular properties (no saved properties found)",
+//         recommendationType: "popular",
+//       });
+//     }
+
+//     // Calculate user preferences based on saved properties
+//     const userPreferences = calculateUserPreferences(savedProperties);
+
+//     // Get all available properties (excluding already saved ones)
+//     const savedPropertyIds = savedProperties.map((prop) => prop._id.toString());
+//     const availableProperties = await RealEstate.find({
+//       status: true,
+//       _id: { $nin: savedPropertyIds },
+//     }).populate({
+//       path: "propertyOwner",
+//       select: "-password -createdAt -updatedAt -__v -contacts",
+//     });
+
+//     // Calculate similarity scores and sort by relevance
+//     const recommendations = availableProperties
+//       .map((property) => ({
+//         ...property.toObject(),
+//         similarityScore: calculateSimilarityScore(property, userPreferences),
+//       }))
+//       .sort((a, b) => b.similarityScore - a.similarityScore)
+//       .slice(0, parseInt(limit));
+
+//     res.json({
+//       recommendations,
+//       userPreferences,
+//       message: "Content-based recommendations",
+//       recommendationType: "content-based",
+//     });
+//   } catch (error) {
+//     throw error;
+//   }
+// };
+
+// controllers/tenantPropertyControllers.js
+
+/**
+ * @description Recommend properties similar to a currently viewed one
+ * @route GET /api/tenant/real-estate/recommendations/:propertyId
+ * @returns {object} recommendations array
+ */
+const getCollaborativeRecommendations = async (req, res) => {
+  const { propertyId } = req.params; // this is your custom propertyId field
+  const { limit = 4 } = req.query;
+
+  try {
+    // Find property by custom propertyId
+    const currentProperty = await RealEstate.findOne({ propertyId }).lean();
+
+    if (!currentProperty) {
+      return res
+        .status(404)
+        .json({
+          message: `Property with propertyId "${propertyId}" not found`,
+        });
+    }
+
+    const otherProperties = await RealEstate.find({
+      propertyId: { $ne: propertyId },
+      status: true,
+    })
+      .populate({
+        path: "propertyOwner",
+        select: "-password -createdAt -updatedAt -__v -contacts",
+      })
+      .lean();
+
+    const similarProperties = otherProperties
+      .map((property) => ({
+        property,
+        similarity: calculatePropertySimilarity(currentProperty, property),
+      }))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, parseInt(limit))
+      .map((item) => item.property);
+
+    return res.json({
+      recommendations: similarProperties,
+      message: "Recommended similar properties",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+function calculatePropertySimilarity(prop1, prop2) {
+  let score = 0;
+
+  // Category match
+  if (prop1.category === prop2.category) score += 2;
+
+  // Facing direction
+  if (prop1.facing === prop2.facing) score += 1;
+
+  // Price similarity (smaller difference = higher score)
+  const priceDiff = Math.abs(prop1.price - prop2.price);
+  score += Math.max(0, 2 - priceDiff / 50000); // Max score 2
+
+  // Area similarity
+  const areaDiff = Math.abs(prop1.area - prop2.area);
+  score += Math.max(0, 1.5 - areaDiff / 200); // Max score 1.5
+
+  // Rooms match (safely)
+  const roomScore = (r1 = 0, r2 = 0, weight = 0.5) =>
+    1 - Math.min(1, Math.abs(r1 - r2) / 5) * weight;
+
+  const rooms1 = prop1.rooms || {};
+  const rooms2 = prop2.rooms || {};
+
+  score += roomScore(rooms1.bedrooms, rooms2.bedrooms);
+  score += roomScore(rooms1.bathrooms, rooms2.bathrooms);
+  score += roomScore(rooms1.kitchens, rooms2.kitchens);
+
+  // Amenities match (boolean overlap, safely)
+  const amenities1 = prop1.amenities || {};
+  const amenities2 = prop2.amenities || {};
+  const amenityKeys = Object.keys(amenities1);
+  let sharedAmenities = 0;
+
+  for (const key of amenityKeys) {
+    if (amenities1[key] && amenities2[key]) {
+      sharedAmenities += 1;
+    }
+  }
+
+  score += sharedAmenities * 0.2;
+
+  return score;
+}
+
+/**
+ * @description Get property recommendations based on user's saved properties
+ * @route GET /api/tenant/real-estate/recommendations
+ * @returns {object} recommendations array
+ */
+
 const getPropertyRecommendations = async (req, res) => {
   const { userId } = req.user;
   const { limit = 6 } = req.query;
@@ -199,7 +369,7 @@ const getPropertyRecommendations = async (req, res) => {
 
     // For each saved property, find the most similar property
     let similarProperties = [];
-    const maxSimilarPerSaved = 1; // Only get 1 similar property per saved property
+    const maxSimilarPerSaved = 2; // Only get 1 similar property per saved property
 
     for (const savedProp of savedProperties) {
       const similar = availableProperties
@@ -229,7 +399,8 @@ const getPropertyRecommendations = async (req, res) => {
 
     // Combine saved properties and similar properties
     // Saved properties come first
-    const recommendations = [...savedPropsObjects, ...similarPropsObjects];
+    //const recommendations = [...savedPropsObjects, ...similarPropsObjects];
+    const recommendations = [...similarPropsObjects];
 
     // Limit results while preserving order (saved properties first)
     const finalRecommendations = recommendations.slice(0, parseInt(limit));
@@ -440,6 +611,7 @@ const calculateRangeScore = (value, min, max) => {
 export {
   getAllProperties,
   getAllSavedProperties,
+  getCollaborativeRecommendations,
   getPropertyRecommendations,
   getSingleProperty,
   savePropertyToggle,

@@ -33,11 +33,13 @@ import {
   PageLoading,
   RealEstateDetailCard,
 } from "../../components";
+import RealEstateCard from "../../components/RealEstateCard";
 import {
   clearAlert,
   getSingleRealEstate,
   sendEmailToOwner,
 } from "../../features/realEstateTenant/realEstateTenantSlice";
+import axiosFetch from "../../utils/axiosCreate";
 import { format } from "../../utils/valueFormatter";
 
 const getPositiveAmenities = (amenities) => {
@@ -149,6 +151,36 @@ const RealEstateDetail = () => {
     isSaved,
     isProcessing,
   } = useSelector((state) => state.realEstateTenant);
+
+  const [similarProperties, setSimilarProperties] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchSimilarProperties = async () => {
+      if (!realEstate?.propertyId) return;
+
+      try {
+        const response = await axiosFetch.get(
+          `tenant/real-estate/collaborative-recommendations/${realEstate.propertyId}`
+        );
+        console.log(response);
+        setSimilarProperties(response.data.recommendations || []);
+      } catch (error) {
+        const errorMessage =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Something went wrong";
+        setError(errorMessage);
+        console.error("Error fetching data:", errorMessage);
+      }
+    };
+
+    fetchSimilarProperties();
+  }, [realEstate?.propertyId]);
+
+  console.log(realEstate?.propertyId);
+
+  console.log(similarProperties);
 
   const { user } = useSelector((state) => state.auth);
 
@@ -445,6 +477,7 @@ const RealEstateDetail = () => {
             </form>
           </div>
         </aside>
+
         <ConfirmModal open={open} handleModalClose={handleModalClose}>
           <h3 className="text-center">Send Email</h3>
           <p className="text-center my-4">
@@ -471,6 +504,29 @@ const RealEstateDetail = () => {
           handleClose={handleAlertClose}
         />
       </main>
+      <div className="max-w-[90%] mx-auto">
+        <h2>Other real estates you might be interested in</h2>
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Similar Properties</h2>
+          <div className="grid grid-cols-4 gap-2">
+            {similarProperties.map((property) => (
+              <div key={property._id} className="">
+                <RealEstateCard
+                  title={property.title}
+                  slug={property.slug}
+                  price={property.price}
+                  category={property.category}
+                  address={property.address}
+                  realEstateImages={property.realEstateImages}
+                  propertyOwner={property.propertyOwner}
+                  fromOwnerUser={property.fromOwnerUser}
+                  fromUserProfile={property.fromUserProfile}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
       <Footer />
     </>
   );

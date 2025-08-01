@@ -2,10 +2,12 @@ import express from "express";
 import {
   getAllProperties,
   getAllSavedProperties,
+  getCollaborativeRecommendations,
   getPropertyRecommendations,
   getSingleProperty,
   savePropertyToggle,
 } from "../controllers/tenantPropertyControllers.js";
+
 const router = express.Router();
 
 /**
@@ -14,13 +16,26 @@ const router = express.Router();
  */
 router.get("/", getAllProperties);
 
+/**
+ * @description Get property recommendations
+ * @route GET /api/tenant/real-estate/recommendations
+ */
 router.get("/recommendations", getPropertyRecommendations);
 
 /**
- * @description Get single property
- * @route GET /api/tenant/real-estate/:slug
+ * @description Get collaborative recommendations
+ * @route GET /api/tenant/real-estate/collaborative-recommendations/:propertyId
  */
-router.get("/:slug", getSingleProperty);
+router.get(
+  "/collaborative-recommendations/:propertyId",
+  getCollaborativeRecommendations
+);
+
+/**
+ * @description Get all saved properties
+ * @route GET /api/tenant/real-estate/saved/all
+ */
+router.get("/saved/all", getAllSavedProperties);
 
 /**
  * @description Toggle save property for tenant user
@@ -29,11 +44,9 @@ router.get("/:slug", getSingleProperty);
 router.patch("/save/:id", savePropertyToggle);
 
 /**
- * @description Get all saved properties
- * @route GET /api/tenant/real-estate/save/all
+ * @description Get single property (MUST be last among GET routes)
+ * @route GET /api/tenant/real-estate/:slug
  */
-router.get("/saved/all", getAllSavedProperties);
-
-
+router.get("/:slug", getSingleProperty);
 
 export default router;
