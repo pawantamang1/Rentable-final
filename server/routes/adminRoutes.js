@@ -2,6 +2,7 @@ import express from "express";
 import {
   adminDeleteProperty,
   getAllSavedPropertiesAdmin,
+  getPropertyDetailAdmin,
 } from "../controllers/adminUserController.js";
 import {
   loginAdmin,
@@ -14,6 +15,10 @@ const router = express.Router();
 
 // Admin-only routes
 router.get("/saved-properties", getAllSavedPropertiesAdmin);
+
+// Get single property detail for admin view
+router.get("/property/:slug", getPropertyDetailAdmin);
+
 router.delete(
   "/delete-property/:slug",
   verifyAdminAccount,

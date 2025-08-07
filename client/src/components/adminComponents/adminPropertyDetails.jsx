@@ -1,28 +1,25 @@
-import DeleteIcon from "@mui/icons-material/Delete";
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Button,
+  CircularProgress,
+  IconButton,
+  Tooltip,
   Card,
   CardContent,
   CardMedia,
   Chip,
-  CircularProgress,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import countryToCurrency from "country-to-currency";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { AlertToast, ConfirmModal, PageLoading } from "../../components";
 import { countries } from "../../utils/countryList";
-import {
-  createNumberFormatter,
-  dateFormatter,
-} from "../../utils/valueFormatter";
+import { createNumberFormatter, dateFormatter } from "../../utils/valueFormatter";
 
-const Homepage = () => {
+const AdminDashboard = () => {
   const navigate = useNavigate();
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +31,7 @@ const Homepage = () => {
   const fetchSavedProperties = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/admin/saved-properties");
+      const response = await axios.get("/api/v1/admin/saved-properties");
       setProperties(response.data.allSavedProperties);
     } catch (error) {
       console.error("Error fetching saved properties:", error);
@@ -51,7 +48,7 @@ const Homepage = () => {
   const fetchAllProperties = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/admin/properties");
+      const response = await axios.get("/api/v1/admin/properties");
       setProperties(response.data.properties);
     } catch (error) {
       console.error("Error fetching all properties:", error);
@@ -77,7 +74,7 @@ const Homepage = () => {
     if (!deleteSlug) return;
     setIsProcessing(true);
     try {
-      await axios.delete(`/api/admin/delete-property/${deleteSlug}`);
+      await axios.delete(`/api/v1/admin/delete-property/${deleteSlug}`);
       setProperties((prev) =>
         prev.filter((property) => property.slug !== deleteSlug)
       );
@@ -112,11 +109,9 @@ const Homepage = () => {
       (country) => country.label === property?.address?.country
     );
     if (!currentCountry) return property?.price;
-
+    
     const format = createNumberFormatter(currentCountry?.code);
-    return `${countryToCurrency[currentCountry.code]} ${format(
-      property?.price
-    )}`;
+    return `${countryToCurrency[currentCountry.code]} ${format(property?.price)}`;
   };
 
   if (isLoading) return <PageLoading />;
@@ -125,7 +120,7 @@ const Homepage = () => {
     <main className="mx-4 mt-10 mb-12">
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-heading text-2xl font-bold">Admin Dashboard</h2>
-
+        
         {/* Toggle between saved and all properties */}
         <div className="flex gap-2">
           <Button
@@ -133,8 +128,7 @@ const Homepage = () => {
             onClick={() => setViewType("saved")}
             size="small"
           >
-            Saved Properties ({viewType === "saved" ? properties.length : "..."}
-            )
+            Saved Properties ({viewType === "saved" ? properties.length : "..."})
           </Button>
           <Button
             variant={viewType === "all" ? "contained" : "outlined"}
@@ -149,9 +143,7 @@ const Homepage = () => {
       {properties.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600">
-            {viewType === "saved"
-              ? "No saved properties found."
-              : "No properties found."}
+            {viewType === "saved" ? "No saved properties found." : "No properties found."}
           </p>
         </div>
       ) : (
@@ -171,7 +163,7 @@ const Homepage = () => {
                 component="img"
                 sx={{ height: 200, objectFit: "cover" }}
                 image={
-                  property.realEstateImages?.[0] ||
+                  property.realEstateImages?.[0] || 
                   "/placeholder-property-image.jpg"
                 }
                 alt={property.title}
@@ -186,13 +178,11 @@ const Homepage = () => {
                 <h3 className="text-lg font-semibold mb-1 line-clamp-2">
                   {property.title}
                 </h3>
-
+                
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm text-gray-600">
-                    {property.category}
-                  </span>
-                  <Chip
-                    label={property.status ? "Available" : "Rented"}
+                  <span className="text-sm text-gray-600">{property.category}</span>
+                  <Chip 
+                    label={property.status ? "Available" : "Rented"} 
                     color={property.status ? "success" : "error"}
                     size="small"
                   />
@@ -215,15 +205,14 @@ const Homepage = () => {
                     Owner: {property.propertyOwner?.firstName}{" "}
                     {property.propertyOwner?.lastName}
                   </p>
-
+                  
                   {/* Show savedBy info only for saved properties view */}
                   {viewType === "saved" && property.savedBy && (
                     <p className="text-xs text-gray-500">
-                      Saved By: {property.savedBy.name} (
-                      {property.savedBy.email})
+                      Saved By: {property.savedBy.name} ({property.savedBy.email})
                     </p>
                   )}
-
+                  
                   <p className="text-xs text-gray-400 mt-1">
                     Posted: {dateFormatter(property?.createdAt)}
                   </p>
@@ -241,7 +230,7 @@ const Homepage = () => {
                     <VisibilityIcon />
                   </IconButton>
                 </Tooltip>
-
+                
                 <Tooltip title="Delete Property">
                   <IconButton
                     onClick={(e) => {
@@ -299,4 +288,4 @@ const Homepage = () => {
   );
 };
 
-export default Homepage;
+export default AdminDashboard;
