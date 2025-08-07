@@ -19,11 +19,8 @@ router.get("/saved-properties", getAllSavedPropertiesAdmin);
 // Get single property detail for admin view
 router.get("/property/:slug", getPropertyDetailAdmin);
 
-router.delete(
-  "/delete-property/:slug",
-  verifyAdminAccount,
-  adminDeleteProperty
-);
+// Delete property by admin
+router.delete("/delete-property/:slug", adminDeleteProperty);
 router.post("/register-admin", registerAdmin);
 router.post("/login-admin", loginAdmin);
 router.post("/verify-account/admin", verifyAdminAccount);
